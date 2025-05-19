@@ -26,7 +26,21 @@
 ### Non-Functional Specifications
 
 ### Use Case
+**Actor:** User (Professional or Amateur Gamer)
 
+**Preconditions:** Internet access; API with DnD data is available. Python installed.
+
+**Main Flow:**
+ 1. Load / Create a save.
+ 2. Display Save Data -- Character Stats, Inventory, Location, etc... --; System confirms data and displays it to the user.
+ 3. Use Terminal Actions -- Move the player, Equip Items, Attack, Etc... --; The system displays the actions informational text and updates the stats and save.
+ 5. Finalise Save; The system adds content to the save. 
+ 4. Beat the game, -- User completes the win condition of the game --; The system keeps or deletes the save, and marks the game as complete. Removing most of the playable content.
+ 
+
+**Postconditions:** Save data is retrieved and stored successfully.
+
+![Use case Diagram](TheoryStorage/DungeonsAndCritters-UseCases.png)
 ## Design
 
 ## Build and Test

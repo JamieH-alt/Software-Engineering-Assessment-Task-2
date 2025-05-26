@@ -22,8 +22,27 @@
 
 ## Determining Specifications
 ### Functional Specifications
+* The user needs to be able to easily access multiple saves for different characters that are clearly labelled and independant.
+* The user needs to be able to easily navigate between the main UI's.
+* The user needs to be able to quickly and easily control there characters inventory and stats.
+* The user needs to be able to easily access a help page that will explain the systems more complex implementations
+* The system needs to accept UI related inputs like tab switching through the keyboard and mouse aswell as text based inputs that cut off control the the UI while entered.
+* Text inputs should accept all basic unicode characters.
+* The system needs to output the players location, health, stats, and other basic details
+* The system needs to output the players actions and details within the "Terminal" within the program.
+* The program needs to be able to access online databases (DnD 5e's API) to get stats for monsters and items etc...
+* The user will interact with the system through A TUI (Terminal User Interface) mixed with its own actual CLI (Command Line Interface) within the TUI. The CLI within the TUI will be used for player actions.
+* Any invalid inputs need to be either rejected, or clearly output incorrect answers that allows the user to correct their mistake with minimal reprecussions.
+* The system needs to be able to provide a basic crash log in the form of a .log file within the logs folder. 
 
 ### Non-Functional Specifications
+* The system should be lightning fast, running everything visually within seconds and the content taking a little bit longer than that.
+* Basic actions should have response times in less than a second. With bigger actions allowing for longer wait times.
+* The program will need to remain efficient through efficient use of hard coding details and caching.
+* The TUI will use mainly high contrasting colours avoiding white text on white backgrounds etc...
+* The TUI should be nearly completely navigatable through just the keyboard using TAB and over varients.
+* Data corruption needs to be minimal and not occur throughout any stage of testing (Unless tests are run mid-sprint not post-sprint, then data corruption can be ignored).
+* Invalid data from online sources like the DnD database could cause a lack of reliability, so the program should minimise the effect of invalid data through a placeholder method (I.E. If a mob that doesn't exist is called, it could replace it with a basic humanoid zombie or something similar)
 
 ### Use Case
 **Actor:** User (Professional or Amateur Gamer)
@@ -42,6 +61,17 @@
 
 ![Use case Diagram](TheoryStorage/DungeonsAndCritters-UseCases.png)
 ## Design
+### Story Board
+![Story Board Diagram](TheoryStorage/DungeonsAndCritters-StoryBoard.png)
+### Data Flow Diagram - Level 0 (Context) and Level 1
+**Level 0** \
+![Level 0 Data Flow Diagram](TheoryStorage/DungeonsAndCritters-DFD0.png)
+
+**Level 1** \
+![Level 1 Data  Flow Diagram](TheoryStorage/DungeonsAndCritters-DFD1.png)
+
+### Gantt Chart
+![Gantt Chart](TheoryStorage/DungeonsAndCritters-GanttChart.png)
 
 ## Build and Test
 

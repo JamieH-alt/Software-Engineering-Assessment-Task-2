@@ -9,7 +9,7 @@ import json
 import random
 
 
-# Basic Item Class for testing
+# Basic Item Class for testing, Will eventually have way more stats.
 class Item:
     def __init__(self, name: str, description: str):
         self.name = name
@@ -19,7 +19,7 @@ class Item:
         return Collapsible(Static(self.description), title=self.name, collapsed=True)
 
 
-# Example items in the inventory
+# Example items in the inventory, this will later be replaced with items filled by Dnd 5E API
 items = [
     Item("Sword of Testing", "A legendary test blade."),
     Item("Potion of Bugs", "Causes strange behavior."),
@@ -34,13 +34,13 @@ items = [
 savefilepath = ""
 savefile = None
 
-class SaveFile():
+class SaveFile(): # This is a basic non-saving save file system, It does load but doesn't save.
     def __init__(self, filepath):
         self.filepath = filepath
         self.data = {}
         self.load()
 
-    def load(self):
+    def load(self): # Try's to read the file but if it fails returns null.
         try:
             with open(self.filepath, 'r') as f:
                 self.data = json.load(f)
@@ -48,7 +48,7 @@ class SaveFile():
             self.data = {}
 
 
-    def save(self):
+    def save(self): # Unused but this would theoretically save the file (Unused because nothing is added to the save data yet)
         with open(self.filepath, 'w') as f:
             json.dump(self.data, f, indent=4)
 
@@ -62,7 +62,7 @@ class SaveFile():
          if key in self.data:
             del self.data[key]
 
-class NewSaveSubmit(Horizontal):
+class NewSaveSubmit(Horizontal): # This is the button submit and the input for save files. This allows us to send the player to the character menu
     def __init__(self):
         super().__init__(classes="load_screen-submit")
         self.savename = ""
@@ -72,7 +72,7 @@ class NewSaveSubmit(Horizontal):
 
     def on_button_pressed(self, event: Button.Pressed):
         global savefilepath, savefile
-        if event.button.id == "submit_button":
+        if event.button.id == "submit_button": # Makes sure its the correct button
             savefiles = []
 
             for entry in os.scandir("saves"):
@@ -89,11 +89,11 @@ class NewSaveSubmit(Horizontal):
 
             self.app.create_game()
 
-    def compose(self):
+    def compose(self): # This is just setting up what is inside of the Horizontal frame
         yield Input(placeholder="Save Name", classes="load_screen-input")
         yield Button(label="Submit", id="submit_button", classes="load_screen-button")
 
-class LoadScreen(Container):
+class LoadScreen(Container): # This lists of every save in a ListView and then adds an extra iteration for the new save.
     def __init__(self):
         super().__init__()
         directory = "saves"
@@ -120,14 +120,14 @@ class LoadScreen(Container):
                     yield ListItem(Label(save.lstrip("saves/").rstrip(".json")))
             yield ListItem(Label("New Save"))
 
-class MainPages(Container):
+class MainPages(Container): # This is the main container for the app that sets up all the pages
     def __init__(self):
         super().__init__()
 
     def compose(self) -> ComposeResult:
         global items
 
-        with TabbedContent():
+        with TabbedContent(): # This allows us to have tabs to break up the program into various windows
             yield HomePage("Home (h)")
 
             yield MapPage("Map (m)")
@@ -137,7 +137,7 @@ class MainPages(Container):
             with TabPane("Help (?)", id="tab_help"):
                 yield MarkdownViewer(Path("help.md").read_text(), show_table_of_contents=True)
 
-class HomePage(TabPane):
+class HomePage(TabPane): # This page is dedicated to displaying inputs
     def __init__(self, name):
         super().__init__(name, id="tab_home")
 
@@ -166,7 +166,7 @@ class HomePage(TabPane):
             with Vertical(classes="home_tab-columns"):
                 yield Static("Minimap", classes="generic_tab-title")
 
-class MapPage(TabPane):
+class MapPage(TabPane): # Self explanatory, just text and columns aswell as an ascii art of what the map might look like.
     def __init__(self, name):
         super().__init__(name, id="tab_map")
 
@@ -206,7 +206,7 @@ class MapPage(TabPane):
                 yield Static("* ELednor Isles 15 anno", classes="map_tab-sub_info")
                 yield Static("* Other basic info", classes="map_tab-sub_info")
 
-class InventoryPage(TabPane):
+class InventoryPage(TabPane): # This just loops through all the items that are in the items list and puts them into a grid for the user, allowing them to be dropped down with the .get_widget from  the Item() class
     def __init__(self, name):
         super().__init__(name, id="tab_inventory")
 
@@ -218,7 +218,7 @@ class InventoryPage(TabPane):
                     for i in range(column, len(items), 3):
                         yield items[i].get_widget()
 
-class CharacterPage(TabPane):
+class CharacterPage(TabPane): # This just displays all the character ifnormation for the player, like stats. Just text pretty much.
     def __init__(self, name):
         super().__init__(name, id="tab_character")
 
@@ -240,7 +240,7 @@ class CharacterPage(TabPane):
 
                 yield Static("")
 
-                ability_scores = CharacterCreator().reroll_stats()
+                ability_scores = CharacterCreator().reroll_stats() # sets stats to be random as saving isn't currently used
 
                 for stat in ability_scores:
                     yield Static(f"{stat.capitalize()}: {ability_scores[stat]}", id=f"{stat}_stat", classes="character_tab-stat")
@@ -263,7 +263,7 @@ class CharacterPage(TabPane):
 
                 yield Static("* Nothing to See Here")
 
-class CharacterCreator(Container):
+class CharacterCreator(Container): # Creates the character
     def __init__(self):
         super().__init__(id="character_creator-main")
 
@@ -273,18 +273,15 @@ class CharacterCreator(Container):
 
         yield Static("Character Creator", classes="generic_tab-title")
 
-        # yield Label("Character Name: ", id="label_name", classes="character_creator-label")
         with Center():
             yield Input(placeholder="Enter character name", id="input_name", classes="character_creator-input")
 
         # Race Selection
-        # yield Label("Race: ", id="label_race", classes="character_creator-label")
-        races = [("Human", 1), ("Orc", 2)]
+        races = [("Human", 1), ("Orc", 2)] # this style of list allows us to set things into the dropdown and give them a weighting.
         with Center():
-            yield Select(races, prompt="Select Race", id = "select_race", classes="character_creator-select")
+            yield Select(races, prompt="Select Race", id = "select_race", classes="character_creator-select") # Automatically lays the list out in a drolpdown list.
 
         # Class Selection
-        # yield Label("Class: ", id="label_class", classes="character_creator-label")
         char_classes = [("Barbarian", 1), ("Fighter", 2)]
         with Center():
             yield Select(char_classes, prompt="Select Class", id = "select_class", classes="character_creator-select")
@@ -340,7 +337,7 @@ class CharacterCreator(Container):
             for key in ability_scores:
                 self.query_one(f"#{key}_stat", Static).update(f"{key.capitalize()}: " + str(ability_scores[key]))
 
-    def reroll_stats(self):
+    def reroll_stats(self): # Randomises stats
         ability_scores = {}
         ability_scores["strength"] = self.roll_stat()
         ability_scores["dexterity"] = self.roll_stat()
@@ -351,35 +348,36 @@ class CharacterCreator(Container):
         return ability_scores
 
 
-    def roll_stat(self) -> int:
+    def roll_stat(self) -> int: # Emulates rolling 4d6 and getting rid of the lowest dice roll.
         dice = [random.randint(1, 6) for _ in range(4)]
         dice.remove(min(dice))  # Remove the lowest roll
         return sum(dice)  # Sum the remaining 3 dice
 
 
-class MyApp(App):
+class MyApp(App): # This is the main app container that composes everything
     TITLE = "Dungeons And Critters"
     SUB_TITLE = "Version 1.0 (WIP)"
     CSS_PATH = "textual-main.tcss"
     BINDINGS = [("h", "tab_home", "Home"), ("m", "tab_map", "Map"), ("i", "tab_inventory", "Inventory"), ("c", "tab_character", "Character"), ("?", "tab_help", "Help")]
 
-    def compose(self) -> ComposeResult:
+    def compose(self) -> ComposeResult: # Displays load screen before the main pages
         yield Header()
         yield LoadScreen()  # Display save/load screen first
         # yield MainPages()
 
-    def load_game(self) -> None:
+    def load_game(self) -> None: 
         self.query_one(LoadScreen).remove()  # Remove the save/load screen
         self.mount(MainPages())  # Show the main app after loading
 
-    def load_made_game(self) -> None:
+    def load_made_game(self) -> None: # The game is made so it gets rid of the character creator.
         self.query_one(CharacterCreator).remove()
         self.mount(MainPages())
 
-    def create_game(self) -> None:
+    def create_game(self) -> None: # This loads the character creator
         self.query_one(LoadScreen).remove()
         self.mount(CharacterCreator())
 
+    # This sets up all of the tabs
     def action_tab_home(self) -> None:
         self.query_one(TabbedContent).active = "tab_home"
 

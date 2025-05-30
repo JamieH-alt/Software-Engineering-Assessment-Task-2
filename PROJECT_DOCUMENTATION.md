@@ -491,3 +491,127 @@ The program has easy to read code comments that help with the overall organisati
 In the next Sprint (Sprint 2) the core functionality of the program will be laid out, This include the terminal system, save system, items system, and the interaction with the terminal / game world. It will mainly provide the base functionallity to have a formed game, whilst Sprint 3 will flesh it out more. During Sprint 2 a key focus will be to ensure the upkeep of the code's high quality (as previously assessed), and the code's organisation -- allowing for an easy divide between UI frameworks and actual code for editing and maintainability purposes.
 
 # Sprint 2
+## Design
+**Structure Chart**
+![Structure Chart](TheoryStorage/DungeonsAndCritters-StructureChart.png)
+
+**Algorithms**
+*Main Algorithm*
+```
+BEGIN
+    save system (saves directory)
+    Get the current page
+    IF page is home THEN
+        Make 3 Boxes / Columns
+        Get all items player has equipped
+        Make a scrollable menu in 1st column
+        FOR item = first item player equipoed TO last item player equipped STEP each item
+            Get widget component of item
+            Add widget component to scrollable menu
+        NEXT item
+        Add a Textbox Output in 2nd column
+        Add Textbox Input and Submit Button in 2nd column
+        Display output of terminal () in Textbox Output
+        Display minimap () in 3rd column
+    ELSE IF page is inventory THEN
+        Make a grid with 3 columns and infinite rolls that can scroll
+        Get all items in players inventory
+        FOR item = first item in player inventory TO last item in player inventory STEP each item
+            Get widget component of item
+            Add widget component to grid
+        NEXT item
+    ELSE IF page is map THEN
+        Make 3 columns down the page
+        Display Ascii Art Map on Left
+        Display Information on the general map in middle column
+        Display Location Specific Information on the right column
+    ELSE IF page is character THEN
+        Get Player
+        List current stats of Player
+    ELSE IF page is help THEN
+        Get HELP.MD File
+        Read HELP.MD File
+        Display HELP.MD File as page content.
+    ENDIF
+END
+```
+![Main Algorithm](TheoryStorage/DungeonsAndCritters-Algorithms-MainAlgorithm.png)
+
+*Save System*
+```
+BEGIN save system (saves directory)
+    FOR save = first file in saves directory TO last file in saves directory STEP file
+        Add save to interactable list
+    NEXT save
+    Add New Save option to interactable list
+    REPEAT
+        IF save selected THEN
+            IF save is New Save THEN
+                Load New Page
+                Display inputs for Name, Class, Race
+                Randomise Character Stats
+                List Character Stats
+                Display button to re-randomise Character Stats
+                Display button to Create Character
+                REPEAT
+                    IF button pressed THEN
+                    Load Save
+                    ENDIF
+                UNTIL button pressed
+            ELSE
+                Load Save
+            ENDIF
+        ENDIF
+    UNTIL save loaded
+END save system (saves directory)
+```
+![Save System](TheoryStorage/DungeonsAndCritters-Algorithms-SaveSystem.png)
+
+*Terminal*
+```
+BEGIN terminal
+    Get Player
+    Get Player Stats
+    Get Location
+    Get Location Stats
+    WHILE Player is Alive
+        Get Location Information Text
+        Display Location Information Text
+        Get Location Interactions
+        Get Location Monsters
+        IF Location has Monsters THEN
+            Add Combat to Location Interactions
+        ENDIF
+        Get Normal Interactions (Inventory)
+        Add Normal Interactions and Location Interactions to Interactions
+        Display Interations
+        Await Player Interaction Selection
+        IF Player Interaction Selection = Combat THEN
+            combat ()
+            IF combat killed player THEN
+                Player is not Alive
+            ENDIF
+        ELSE IF Player Interaction Selection = More Information THEN
+            rolldice ()
+            IF rolldice = 15 or greater THEN
+                Display More Information
+            ENDIF
+        ELSE IF Player Interaction Select = Inventory THEN
+            Display Player Inventory to the Player
+            Display Player Inventory Interactions
+            Await Player Inventory Interaction
+            inventory (Player Inventory Interaction)
+        ELSE IF Player Interaction Select = Move THEN
+            Get Moveable Locations
+            Display Moveable Locations
+            FOR location = First Moveable Location TO Last Moveable Location STEP moveable location
+                Display location Base Information
+            NEXT location
+        ENDIF
+    ENDWHILE
+    IF Player is not Alive THEN
+        player death ()
+    ENDIF
+END terminal
+```
+![Terminal](TheoryStorage/DungeonsAndCritters-Algorithms-Terminal.png)

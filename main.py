@@ -7,6 +7,7 @@ from textual.reactive import reactive
 from textual.events import Event
 import json
 import random
+import class_segregation as cs
 
 
 # Basic Item Class for testing, Will eventually have way more stats.
@@ -29,7 +30,50 @@ items = [
     Item("Ring of Wisdom", "Increases intelligence.")
 ]
 
+# Core D&D 5E Character Races
+Human = cs.Race(0, "Human", "WIP", cs.Stats(1, 1, 1, 1, 1, 1))
+Elf = cs.Race(1, "Elf", "WIP", cs.Stats(0, 2, 0, 0, 0, 0))
+Dwarf = cs.Race(2, "Dwarf", "WIP", cs.Stats(0, 0, 2, 0, 0, 0))
+Halfling = cs.Race(3, "Halfling", "WIP", cs.Stats(0, 2, 0, 0, 0, 0))
+Dragonborn = cs.Race(4, "Dragonborn", "WIP", cs.Stats(2, 0, 0, 0, 0, 1))
+Tiefling = cs.Race(5, "Tiefling", "WIP", cs.Stats(0, 0, 0, 1, 0, 2))
+HalfOrc = cs.Race(6, "Half-Orc", "WIP", cs.Stats(2, 0, 1, 0, 0, 0))
+HalfElf = cs.Race(7, "Half-Elf", "WIP", cs.Stats(1, 0, 1, 0, 0, 2))
 
+# Supplementary Races (Homebrew & Expansion)
+Gnome = cs.Race(8, "Gnome", "WIP", cs.Stats(0, 0, 0, 2, 0, 0))
+Tabaxi = cs.Race(9, "Tabaxi", "WIP", cs.Stats(0, 2, 0, 0, 0, 1))
+Lizardfolk = cs.Race(10, "Lizardfolk", "WIP", cs.Stats(0, 0, 2, 0, 1, 0))
+Dhampir = cs.Race(11, "Dhampir", "WIP", cs.Stats(0, 2, 0, 0, 0, 1))
+
+Races = [Human, Elf, Dwarf, Halfling, Dragonborn, Tiefling, HalfOrc, HalfElf, Gnome, Tabaxi, Lizardfolk, Dhampir]
+
+# Core D&D 5E Character Classes
+Barbarian = cs.CharClass(0, "Barbarian", "WIP", cs.Stats(2, 0, 1, 0, 0, 0))
+Bard = cs.CharClass(1, "Bard", "WIP", cs.Stats(0, 0, 0, 0, 0, 2))
+Cleric = cs.CharClass(2, "Cleric", "WIP", cs.Stats(0, 0, 0, 0, 2, 0))
+Druid = cs.CharClass(3, "Druid", "WIP", cs.Stats(0, 0, 0, 0, 2, 0))
+Fighter = cs.CharClass(4, "Fighter", "WIP", cs.Stats(2, 0, 1, 0, 0, 0))
+Monk = cs.CharClass(5, "Monk", "WIP", cs.Stats(0, 2, 1, 0, 0, 0))
+Paladin = cs.CharClass(6, "Paladin", "WIP", cs.Stats(2, 0, 1, 0, 0, 1))
+Ranger = cs.CharClass(7, "Ranger", "WIP", cs.Stats(0, 2, 0, 0, 1, 0))
+Rogue = cs.CharClass(8, "Rogue", "WIP", cs.Stats(0, 2, 0, 0, 0, 0))
+Sorcerer = cs.CharClass(9, "Sorcerer", "WIP", cs.Stats(0, 0, 0, 0, 0, 2))
+Warlock = cs.CharClass(10, "Warlock", "WIP", cs.Stats(0, 0, 0, 1, 0, 2))
+Wizard = cs.CharClass(11, "Wizard", "WIP", cs.Stats(0, 0, 0, 2, 0, 0))
+
+# Supplementary Classes (Homebrew & Expansion)
+Artificer = cs.CharClass(12, "Artificer", "WIP", cs.Stats(0, 0, 1, 2, 0, 0))  # Magic + Crafting
+BloodHunter = cs.CharClass(13, "Blood Hunter", "WIP", cs.Stats(1, 2, 0, 0, 0, 0))  # Curse-based combat
+Mystic = cs.CharClass(14, "Mystic", "WIP", cs.Stats(0, 0, 0, 2, 2, 0))  # Psionics & Mind abilities
+Warden = cs.CharClass(15, "Warden", "WIP", cs.Stats(2, 0, 2, 0, 0, 0))  # Nature & Protection-based fighter
+Necromancer = cs.CharClass(16, "Necromancer", "WIP", cs.Stats(0, 0, 0, 2, 1, 0))  # Undead summoning & death magic
+
+# Updated List with All Classes
+Classes = [
+    Barbarian, Bard, Cleric, Druid, Fighter, Monk, Paladin, Ranger, Rogue, Sorcerer, Warlock, Wizard,
+    Artificer, BloodHunter, Mystic, Warden, Necromancer
+]
 
 savefilepath = ""
 savefile = None
@@ -277,14 +321,18 @@ class CharacterCreator(Container): # Creates the character
             yield Input(placeholder="Enter character name", id="input_name", classes="character_creator-input")
 
         # Race Selection
-        races = [("Human", 1), ("Orc", 2)] # this style of list allows us to set things into the dropdown and give them a weighting.
+        races = []
+        for i in Races:
+            races.append((i.get_name(), i.get_id()))
         with Center():
             yield Select(races, prompt="Select Race", id = "select_race", classes="character_creator-select") # Automatically lays the list out in a drolpdown list.
 
         # Class Selection
-        char_classes = [("Barbarian", 1), ("Fighter", 2)]
+        charclasses = []
+        for i in Classes:
+            charclasses.append((i.get_name(), i.get_id()))
         with Center():
-            yield Select(char_classes, prompt="Select Class", id = "select_class", classes="character_creator-select")
+            yield Select(charclasses, prompt="Select Class", id = "select_class", classes="character_creator-select")
 
         yield Static("")
 

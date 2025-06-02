@@ -514,7 +514,7 @@ BEGIN
         Display output of terminal () in Textbox Output
         Display minimap () in 3rd column
     ELSE IF page is inventory THEN
-        Make a grid with 3 columns and infinite rolls that can scroll
+        Make a grid with 3 columns and infinite rows that can scroll
         Get all items in players inventory
         FOR item = first item in player inventory TO last item in player inventory STEP each item
             Get widget component of item
@@ -522,7 +522,7 @@ BEGIN
         NEXT item
     ELSE IF page is map THEN
         Make 3 columns down the page
-        Display Ascii Art Map on Left
+        Display Ascii Art Map on Left column
         Display Information on the general map in middle column
         Display Location Specific Information on the right column
     ELSE IF page is character THEN
@@ -555,7 +555,7 @@ BEGIN save system (saves directory)
                 Display button to Create Character
                 REPEAT
                     IF button pressed THEN
-                    Load Save
+                        Load Save
                     ENDIF
                 UNTIL button pressed
             ELSE

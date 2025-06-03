@@ -21,14 +21,53 @@ class Item:
 
 
 # Example items in the inventory, this will later be replaced with items filled by Dnd 5E API
-items = [
-    Item("Sword of Testing", "A legendary test blade."),
-    Item("Potion of Bugs", "Causes strange behavior."),
-    Item("Scroll of Logs", "Reveals hidden logs."),
-    Item("Amulet of Power", "Grants strength."),
-    Item("Shield of Invincibility", "Protects from damage."),
-    Item("Ring of Wisdom", "Increases intelligence.")
-]
+# items2 = [
+#     Item("Sword of Testing", "A legendary test blade."),
+#     Item("Potion of Bugs", "Causes strange behavior."),
+#     Item("Scroll of Logs", "Reveals hidden logs."),
+#     Item("Amulet of Power", "Grants strength."),
+#     Item("Shield of Invincibility", "Protects from damage."),
+#     Item("Ring of Wisdom", "Increases intelligence.")
+# ]
+
+Greatsword = cs.Weapon(
+    desc=[],
+    special=[],
+    index="greatsword",
+    name="Greatsword",
+    equipment_category=cs.APIObject("weapon", "Weapon", "/api/2014/equipment-categories/weapon"),
+    gear_category=cs.APIObject("martial-melee", "Martial Melee", "/api/2014/equipment-categories/martial-melee"),
+    cost=cs.Cost(50, "gp"),
+    weight=6,
+    url="/api/2014/equipment/greatsword",
+    contents=[],
+    properties=[
+        cs.APIObject("heavy", "Heavy", "/api/2014/weapon-properties/heavy"),
+        cs.APIObject("two-handed", "Two-Handed", "/api/2014/weapon-properties/two-handed")
+    ],
+    weapon_category="Martial",
+    weapon_range="Melee",
+    category_range="Martial Melee",
+    damage=cs.Damage(cs.Dice.translate("2d6"), cs.APIObject("slashing", "Slashing", "/api/2014/damage-types/slashing")),
+    range={"normal": 5}
+)
+
+Abacus = cs.Item(
+    desc=[],  # No description provided
+    special=[],  # No special traits listed
+    index="abacus",
+    name="Abacus",
+    equipment_category=cs.APIObject("adventuring-gear", "Adventuring Gear", "/api/2014/equipment-categories/adventuring-gear"),
+    gear_category=cs.APIObject("standard-gear", "Standard Gear", "/api/2014/equipment-categories/standard-gear"),
+    cost=cs.Cost(2, "gp"),
+    weight=2,
+    url="/api/2014/equipment/abacus",
+    contents=[],
+    properties=[]
+)
+
+
+items = [Greatsword, Abacus]
 
 # Core D&D 5E Character Races
 Human = cs.Race(0, "Human", "WIP", cs.Stats(1, 1, 1, 1, 1, 1))

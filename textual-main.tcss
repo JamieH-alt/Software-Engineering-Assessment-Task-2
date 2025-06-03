@@ -33,6 +33,10 @@
     width: auto;
 }
 
+.item-verticalscroll {
+    height: auto;
+}
+
 Collapsible {
     height: auto;
     min-height: 3;

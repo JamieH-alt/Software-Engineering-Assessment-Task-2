@@ -1,118 +1,18 @@
 import os
 from pathlib import Path
 from textual.app import App, ComposeResult
-from textual.widgets import Header, Footer, TabbedContent, Static, TabPane, MarkdownViewer, Collapsible, Button, Input, Label, Log, ListItem, ListView, Select, Rule
+from textual.widgets import Header, Footer, TabbedContent, Static, TabPane, MarkdownViewer, Collapsible, Button, Input, Label, Log, ListItem, ListView, Select, ProgressBar, Rule
 from textual.containers import Grid, VerticalScroll, Vertical, Container, Horizontal, Center
 from textual.reactive import reactive
 from textual.events import Event
+from textual.message import Message
 import json
 import random
 import class_segregation as cs
 
-
-# Basic Item Class for testing, Will eventually have way more stats.
-class Item:
-    def __init__(self, name: str, description: str):
-        self.name = name
-        self.description = description
-
-    def get_widget(self) -> Collapsible:
-        return Collapsible(Static(self.description), title=self.name, collapsed=True)
-
-
-# Example items in the inventory, this will later be replaced with items filled by Dnd 5E API
-# items2 = [
-#     Item("Sword of Testing", "A legendary test blade."),
-#     Item("Potion of Bugs", "Causes strange behavior."),
-#     Item("Scroll of Logs", "Reveals hidden logs."),
-#     Item("Amulet of Power", "Grants strength."),
-#     Item("Shield of Invincibility", "Protects from damage."),
-#     Item("Ring of Wisdom", "Increases intelligence.")
-# ]
-
-Greatsword = cs.Weapon(
-    desc=[],
-    special=[],
-    index="greatsword",
-    name="Greatsword",
-    equipment_category=cs.APIObject("weapon", "Weapon", "/api/2014/equipment-categories/weapon"),
-    gear_category=cs.APIObject("martial-melee", "Martial Melee", "/api/2014/equipment-categories/martial-melee"),
-    cost=cs.Cost(50, "gp"),
-    weight=6,
-    url="/api/2014/equipment/greatsword",
-    contents=[],
-    properties=[
-        cs.APIObject("heavy", "Heavy", "/api/2014/weapon-properties/heavy"),
-        cs.APIObject("two-handed", "Two-Handed", "/api/2014/weapon-properties/two-handed")
-    ],
-    weapon_category="Martial",
-    weapon_range="Melee",
-    category_range="Martial Melee",
-    damage=cs.Damage(cs.Dice.translate("2d6"), cs.APIObject("slashing", "Slashing", "/api/2014/damage-types/slashing")),
-    range={"normal": 5}
-)
-
-Abacus = cs.Item(
-    desc=[],  # No description provided
-    special=[],  # No special traits listed
-    index="abacus",
-    name="Abacus",
-    equipment_category=cs.APIObject("adventuring-gear", "Adventuring Gear", "/api/2014/equipment-categories/adventuring-gear"),
-    gear_category=cs.APIObject("standard-gear", "Standard Gear", "/api/2014/equipment-categories/standard-gear"),
-    cost=cs.Cost(2, "gp"),
-    weight=2,
-    url="/api/2014/equipment/abacus",
-    contents=[],
-    properties=[]
-)
-
-
-items = [Greatsword, Abacus]
-
-# Core D&D 5E Character Races
-Human = cs.Race(0, "Human", "WIP", cs.Stats(1, 1, 1, 1, 1, 1))
-Elf = cs.Race(1, "Elf", "WIP", cs.Stats(0, 2, 0, 0, 0, 0))
-Dwarf = cs.Race(2, "Dwarf", "WIP", cs.Stats(0, 0, 2, 0, 0, 0))
-Halfling = cs.Race(3, "Halfling", "WIP", cs.Stats(0, 2, 0, 0, 0, 0))
-Dragonborn = cs.Race(4, "Dragonborn", "WIP", cs.Stats(2, 0, 0, 0, 0, 1))
-Tiefling = cs.Race(5, "Tiefling", "WIP", cs.Stats(0, 0, 0, 1, 0, 2))
-HalfOrc = cs.Race(6, "Half-Orc", "WIP", cs.Stats(2, 0, 1, 0, 0, 0))
-HalfElf = cs.Race(7, "Half-Elf", "WIP", cs.Stats(1, 0, 1, 0, 0, 2))
-
-# Supplementary Races (Homebrew & Expansion)
-Gnome = cs.Race(8, "Gnome", "WIP", cs.Stats(0, 0, 0, 2, 0, 0))
-Tabaxi = cs.Race(9, "Tabaxi", "WIP", cs.Stats(0, 2, 0, 0, 0, 1))
-Lizardfolk = cs.Race(10, "Lizardfolk", "WIP", cs.Stats(0, 0, 2, 0, 1, 0))
-Dhampir = cs.Race(11, "Dhampir", "WIP", cs.Stats(0, 2, 0, 0, 0, 1))
-
-Races = [Human, Elf, Dwarf, Halfling, Dragonborn, Tiefling, HalfOrc, HalfElf, Gnome, Tabaxi, Lizardfolk, Dhampir]
-
-# Core D&D 5E Character Classes
-Barbarian = cs.CharClass(0, "Barbarian", "WIP", cs.Stats(2, 0, 1, 0, 0, 0))
-Bard = cs.CharClass(1, "Bard", "WIP", cs.Stats(0, 0, 0, 0, 0, 2))
-Cleric = cs.CharClass(2, "Cleric", "WIP", cs.Stats(0, 0, 0, 0, 2, 0))
-Druid = cs.CharClass(3, "Druid", "WIP", cs.Stats(0, 0, 0, 0, 2, 0))
-Fighter = cs.CharClass(4, "Fighter", "WIP", cs.Stats(2, 0, 1, 0, 0, 0))
-Monk = cs.CharClass(5, "Monk", "WIP", cs.Stats(0, 2, 1, 0, 0, 0))
-Paladin = cs.CharClass(6, "Paladin", "WIP", cs.Stats(2, 0, 1, 0, 0, 1))
-Ranger = cs.CharClass(7, "Ranger", "WIP", cs.Stats(0, 2, 0, 0, 1, 0))
-Rogue = cs.CharClass(8, "Rogue", "WIP", cs.Stats(0, 2, 0, 0, 0, 0))
-Sorcerer = cs.CharClass(9, "Sorcerer", "WIP", cs.Stats(0, 0, 0, 0, 0, 2))
-Warlock = cs.CharClass(10, "Warlock", "WIP", cs.Stats(0, 0, 0, 1, 0, 2))
-Wizard = cs.CharClass(11, "Wizard", "WIP", cs.Stats(0, 0, 0, 2, 0, 0))
-
-# Supplementary Classes (Homebrew & Expansion)
-Artificer = cs.CharClass(12, "Artificer", "WIP", cs.Stats(0, 0, 1, 2, 0, 0))  # Magic + Crafting
-BloodHunter = cs.CharClass(13, "Blood Hunter", "WIP", cs.Stats(1, 2, 0, 0, 0, 0))  # Curse-based combat
-Mystic = cs.CharClass(14, "Mystic", "WIP", cs.Stats(0, 0, 0, 2, 2, 0))  # Psionics & Mind abilities
-Warden = cs.CharClass(15, "Warden", "WIP", cs.Stats(2, 0, 2, 0, 0, 0))  # Nature & Protection-based fighter
-Necromancer = cs.CharClass(16, "Necromancer", "WIP", cs.Stats(0, 0, 0, 2, 1, 0))  # Undead summoning & death magic
-
 # Updated List with All Classes
-Classes = [
-    Barbarian, Bard, Cleric, Druid, Fighter, Monk, Paladin, Ranger, Rogue, Sorcerer, Warlock, Wizard,
-    Artificer, BloodHunter, Mystic, Warden, Necromancer
-]
+
+items=cs.items
 
 savefilepath = ""
 savefile = None
@@ -135,15 +35,13 @@ class SaveFile(): # This is a basic non-saving save file system, It does load bu
         with open(self.filepath, 'w') as f:
             json.dump(self.data, f, indent=4)
 
-    def get(self, key, default=None):
-        return self.data.get(key, default)
+    def get_player(self):
+        return self.data.get("player", None)
 
-    def set(self, key, value):
-        self.data[key] = value
+    def set_player(self, player_data):
+        self.data["player"] = player_data
+        self.save()
 
-    def delete(self, key):
-         if key in self.data:
-            del self.data[key]
 
 class NewSaveSubmit(Horizontal): # This is the button submit and the input for save files. This allows us to send the player to the character menu
     def __init__(self):
@@ -187,12 +85,29 @@ class LoadScreen(Container): # This lists of every save in a ListView and then a
                 self.savefiles.append(entry.path)
 
     def on_list_view_selected(self, event: ListView.Selected):
-        global savefilepath, savefile
+        global savefilepath, savefile, cs
         if event.item.query_one(Label).renderable == "New Save":
             self.mount(NewSaveSubmit())
         else:
-            savefilepath = event.item.query_one(Label).renderable
+            savefilepath = "saves/" + event.item.query_one(Label).renderable + ".json"
             savefile = SaveFile(savefilepath)
+            player_data = savefile.get_player()
+            if player_data:
+                cs.player = cs.Player(
+                    name=player_data["name"],
+                    race=cs.Race.from_id(player_data["race_id"]),
+                    charclass=cs.CharClass.from_id(player_data["class_id"]),
+                    stats=cs.Stats(**player_data["stats"]),
+                    hitpoints=player_data["hitpoints"],
+                    armorclass=player_data["armorclass"],
+                    proficiencybonus=player_data["proficiencybonus"],
+                    spells=[],
+                    inventory=[cs.item_map[i] for i in player_data["inventory"]],
+                    equipped_inventory=[cs.item_map[i] for i in player_data["equipped_inventory"]]
+                )
+
+                cs.player.level = cs.Level(player_data["level"])
+                cs.player.level.currentexp = player_data["currentexp"]
             self.app.load_game()
 
     def compose(self):
@@ -235,9 +150,9 @@ class HomePage(TabPane): # This page is dedicated to displaying inputs
                 yield Static("Proficiency Bonus: 2", classes="home_tab-statistics-stat")
                 yield Static("")
                 yield Static("Equipped Items: ", classes="home_tab-statistics-subheading")
-                with VerticalScroll(classes="home_tab-statistics-verticalscroll"):
-                    for i in items: # Replace this with equipped items eventualls
-                        yield i.get_widget()
+                with VerticalScroll(classes="home_tab-statistics-verticalscroll", id="equipped_items_container"):
+                    for i in cs.player.equipped_inventory: # Replace this with equipped items eventualls
+                        yield i.get_widget(cs.player)
             with Vertical(classes="home_tab-interactions-column"):
                 with VerticalScroll(classes="home_tab-interactions-console"):
                     yield Static("Welcome to the world of Dungeons and Crawlers", classes="home_tab-interactions-console-line")
@@ -248,6 +163,15 @@ class HomePage(TabPane): # This page is dedicated to displaying inputs
                         yield Button("", id="home_tab-interactions-command_button", classes="home_tab-interactions-command_input-button")
             with Vertical(classes="home_tab-columns"):
                 yield Static("Minimap", classes="generic_tab-title")
+                
+    def refresh_content(self):
+        container = self.query_one("#equipped_items_container")
+        container.remove_children()
+        for item in cs.player.equipped_inventory:
+            widget = item.get_widget(cs.player)
+            widget._watch_collapsed(cs.Item.on_collapsible_toggled)
+            container.mount(widget)
+
 
 class MapPage(TabPane): # Self explanatory, just text and columns aswell as an ascii art of what the map might look like.
     def __init__(self, name):
@@ -298,8 +222,22 @@ class InventoryPage(TabPane): # This just loops through all the items that are i
         with Grid(id="inventory_grid"):
             for column in range(3):
                 with VerticalScroll(id=f"inventory_column_{column}"):
-                    for i in range(column, len(items), 3):
-                        yield items[i].get_widget()
+                    for i in range(column, len(cs.player.inventory), 3):
+                        yield cs.player.inventory[i].get_widget(cs.player)
+        self.refresh_content()
+
+    def refresh_content(self):
+        try:
+            for column in range(3):
+                container1 = self.query_one("#inventory_grid")
+                container = container1.query_one(f"#inventory_column_{column}")
+                container.remove_children()
+                for item in range(column, len(cs.player.inventory), 3):
+                    widget = cs.player.inventory[item].get_widget(cs.player)
+                    widget._watch_collapsed(cs.Item.on_collapsible_toggled)
+                    container.mount(widget)          
+        except:
+            print("--- This is an okay error. ---")
 
 class CharacterPage(TabPane): # This just displays all the character ifnormation for the player, like stats. Just text pretty much.
     def __init__(self, name):
@@ -313,25 +251,28 @@ class CharacterPage(TabPane): # This just displays all the character ifnormation
 
                 yield Static("")
 
-                yield Static("Name: Bobathy", id="label_name", classes="character_tab-label")
-                yield Static("Race: Human", id="label_human", classes="character_tab-label")
-                yield Static("Class: Fighter", id="label_class", classes="character_tab-label")
+                yield Static(f"Name: {cs.player._name}", id="label_name", classes="character_tab-label")
+                yield Static(f"Race: {cs.player.get_race().get_name()}", id="label_human", classes="character_tab-label")
+                yield Static(f"Class: {cs.player.get_class().get_name()}", id="label_class", classes="character_tab-label")
 
                 yield Static("")
 
-                yield Static("Level: 1", id="label_level", classes="character_tab-stat")
+                yield Static(f"Level: {cs.player.level.get_level()} ({cs.player.level.get_current_exp()}/{cs.player.level.required_exp(cs.player.level.level + 1)})", id="label_level", classes="character_tab-stat")
+                progressbar = ProgressBar(total=cs.Level.required_exp(cs.player.level.get_level() + 1), show_eta=False, show_percentage=True)
+                progressbar.advance(cs.player.level.get_current_exp())
+                yield progressbar
 
                 yield Static("")
 
-                ability_scores = CharacterCreator().reroll_stats() # sets stats to be random as saving isn't currently used
+                ability_scores = cs.player.get_stats().to_dict() # sets stats to be random as saving isn't currently used
 
                 for stat in ability_scores:
                     yield Static(f"{stat.capitalize()}: {ability_scores[stat]}", id=f"{stat}_stat", classes="character_tab-stat")
 
                 yield Static("")
 
-                yield Static("Hit Points: 10")
-                yield Static("Armor Class: 15")
+                yield Static(f"Hit Points: {cs.player.get_hitpoints()}")
+                yield Static(f"Armor Class: {cs.player.get_armorclass()}")
                 yield Static("Proficiency Bonus: 2")
             with Vertical():
                 yield Static("Spells", classes="character_tab-column_title")
@@ -349,11 +290,13 @@ class CharacterPage(TabPane): # This just displays all the character ifnormation
 class CharacterCreator(Container): # Creates the character
     def __init__(self):
         super().__init__(id="character_creator-main")
+        self.ability_scores = self.reroll_stats()
+        self.char_name = "John Doe"
+        self.race = cs.Human
+        self.char_class = cs.Barbarian
 
     def compose(self):
         # Character Name Input
-        ability_scores = self.reroll_stats()
-
         yield Static("Character Creator", classes="generic_tab-title")
 
         with Center():
@@ -361,14 +304,14 @@ class CharacterCreator(Container): # Creates the character
 
         # Race Selection
         races = []
-        for i in Races:
+        for i in cs.Races:
             races.append((i.get_name(), i.get_id()))
         with Center():
             yield Select(races, prompt="Select Race", id = "select_race", classes="character_creator-select") # Automatically lays the list out in a drolpdown list.
 
         # Class Selection
         charclasses = []
-        for i in Classes:
+        for i in cs.Classes:
             charclasses.append((i.get_name(), i.get_id()))
         with Center():
             yield Select(charclasses, prompt="Select Class", id = "select_class", classes="character_creator-select")
@@ -381,8 +324,8 @@ class CharacterCreator(Container): # Creates the character
         yield Static("")
 
         # Ability Scores Display and Roll Button
-        for stat in ability_scores:
-            yield Static(f"{stat.capitalize()}: {ability_scores[stat]}", id=f"{stat}_stat", classes="character_creator-stat")
+        for stat in self.ability_scores:
+            yield Static(f"{stat.capitalize()}: {self.ability_scores[stat]}", id=f"{stat}_stat", classes="character_creator-stat")
 
         yield Static("")
 
@@ -409,15 +352,33 @@ class CharacterCreator(Container): # Creates the character
     def on_input_changed(self, event: Input.Changed):
         """Handle all input changes in one function"""
         if event.input.id == "input_name":
-            name = event.value
-        elif event.input.id == "input_race":
-            race = event.value
-        elif event.input.id == "input_class":
-            char_class = event.value
+            self.char_name = event.value
+    
+    def on_select_changed(self, event: Select.Changed):
+        if event.select.id == "select_race":
+            self.race = cs.Race.from_id(event.value)
+        elif event.select.id == "select_class":
+            self.char_class = cs.CharClass.from_id(event.value)
+
 
     def on_button_pressed(self, event: Button.Pressed):
         if (event.button.id == "save_button"):
-            # Save Here
+            cs.player = cs.Player(
+                name=self.char_name,
+                race=self.race,
+                charclass=self.char_class,
+                stats=cs.Stats(self.ability_scores["strength"], self.ability_scores["dexterity"], self.ability_scores["constitution"], self.ability_scores["intelligence"], self.ability_scores["wisdom"], self.ability_scores["charisma"]),
+                hitpoints=10,
+                armorclass=15,
+                proficiencybonus=2,
+                spells=[],
+                inventory=[cs.Greatsword],
+                equipped_inventory=[]
+            )
+
+            if savefile:
+                savefile.set_player(cs.player.serialize())
+
             self.app.load_made_game()
         elif (event.button.id == "roll_button"):
             ability_scores = self.reroll_stats()
@@ -432,6 +393,7 @@ class CharacterCreator(Container): # Creates the character
         ability_scores["intelligence"] = self.roll_stat()
         ability_scores["wisdom"] = self.roll_stat()
         ability_scores["charisma"] = self.roll_stat()
+        self.ability_scores = ability_scores
         return ability_scores
 
 
@@ -464,6 +426,20 @@ class MyApp(App): # This is the main app container that composes everything
         self.query_one(LoadScreen).remove()
         self.mount(CharacterCreator())
 
+    def save_game(self):
+        global savefile, cs
+        if savefile and hasattr(cs, 'player'):
+            savefile.set_player(cs.player.serialize())
+
+    def on_exit(self):
+        self.save_game()
+    
+    def on_tabbed_content_tab_activated(self, event: TabbedContent.TabActivated) -> None:
+        if event.tab.id == "Tab_inventory":
+            event.tab.refresh_content()
+        elif event.tab.id == "tab_home":
+            event.tab.refresh_content()
+
     # This sets up all of the tabs
     def action_tab_home(self) -> None:
         self.query_one(TabbedContent).active = "tab_home"
@@ -482,5 +458,7 @@ class MyApp(App): # This is the main app container that composes everything
 
 
 if __name__ == "__main__":
+    if not os.path.exists("saves"):
+        os.makedirs("saves")
     app = MyApp()
     app.run()

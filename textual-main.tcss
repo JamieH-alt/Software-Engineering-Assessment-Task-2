@@ -145,7 +145,7 @@ Static {
 }
 
 .home_tab-statistics-verticalscroll {
-    height: 70%;
+    height: 80%;
     scrollbar-size: 0 0;
 }
 

@@ -1,0 +1,28 @@
+{
+    "player": {
+        "name": "Libertarianism",
+        "race_id": 6,
+        "class_id": 1,
+        "stats": {
+            "strength": 11,
+            "dexterity": 14,
+            "constitution": 11,
+            "intelligence": 11,
+            "wisdom": 13,
+            "charisma": 10
+        },
+        "hitpoints": 10,
+        "armorclass": 15,
+        "proficiencybonus": 2,
+        "inventory": [
+            "greatsword",
+            "abacus",
+            "half-plate-armor"
+        ],
+        "equipped_inventory": [
+            "greatsword"
+        ],
+        "level": 15,
+        "currentexp": 984
+    }
+}

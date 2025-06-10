@@ -152,7 +152,7 @@ Static {
 .home_tab-interactions-console {
     height: 85%;
     background: $surface;
-    scrollbar-size: 0 0;
+    scrollbar-size: 1 1;
     padding: 0 0;
 }
 
@@ -162,7 +162,14 @@ Rule {
 }
 
 .home_tab-interactions-console-line {
-    dock: top;
+    # dock: top;
+}
+
+.home_tab-interactions-console-timer {
+    dock: bottom;
+    color: red;
+    padding: 0 0;
+    margin: 0 1;
 }
 
 .home_tab-interactions-command_input-input {
@@ -193,4 +200,39 @@ Rule {
 .load_screen-button {
     width: 20%;
     background: $secondary
+}
+
+.generic-money_bag {
+    width: 100%;
+    height: auto;
+    content-align: left middle;
+}
+
+.generic-money_bag-item {
+    width: auto;
+    margin: 0 0;
+    padding: 0 0;
+}
+
+LocationView {
+    grid-size: 14;
+    grid-columns: auto;
+    grid-rows: auto;
+    height: 90%;
+    width: 100%;
+    align: center middle;
+    border: round red;
+}
+
+.terminal-container {
+    border: solid red;
+    height: auto;
+    width: auto;
+}
+
+.terminal-tile {
+    width: 3;
+    height: 1;
+    content-align: center middle;
+    text-style: bold;
 }

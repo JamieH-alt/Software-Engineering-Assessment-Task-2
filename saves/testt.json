@@ -1,0 +1,28 @@
+{
+    "player": {
+        "name": "teastat",
+        "race_id": 1,
+        "class_id": 7,
+        "stats": {
+            "strength": 13,
+            "dexterity": 15,
+            "constitution": 8,
+            "intelligence": 13,
+            "wisdom": 14,
+            "charisma": 18
+        },
+        "hitpoints": 10,
+        "armorclass": 15,
+        "proficiencybonus": 2,
+        "inventory": [
+            "greatsword"
+        ],
+        "equipped_inventory": [],
+        "level": 1,
+        "currentexp": 0,
+        "currencypoints": 245,
+        "spells": [],
+        "health": 10,
+        "max_health": 20
+    }
+}

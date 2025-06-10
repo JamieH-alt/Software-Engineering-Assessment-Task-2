@@ -1,0 +1,34 @@
+{
+    "player": {
+        "name": "testtt",
+        "race_id": 0,
+        "class_id": 0,
+        "stats": {
+            "strength": 11,
+            "dexterity": 10,
+            "constitution": 13,
+            "intelligence": 11,
+            "wisdom": 16,
+            "charisma": 9
+        },
+        "hitpoints": 10,
+        "armorclass": 15,
+        "proficiencybonus": 2,
+        "inventory": [
+            "greatsword",
+            "dagger",
+            "dagger",
+            "dagger",
+            "dagger",
+            "shortsword",
+            "dagger"
+        ],
+        "equipped_inventory": [],
+        "level": 1,
+        "currentexp": 55,
+        "currencypoints": 995,
+        "spells": [],
+        "health": 50,
+        "max_health": 50
+    }
+}

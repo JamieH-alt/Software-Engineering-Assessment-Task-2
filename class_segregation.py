@@ -1,10 +1,11 @@
 import random
-from textual.app import App, ComposeResult
+from textual.app import App, ComposeResult, Widget
 from textual.widgets import Header, Footer, TabbedContent, Static, TabPane, MarkdownViewer, Collapsible, Button, Input, Label, Log, ListItem, ListView, Select, Rule
 from textual.containers import Grid, VerticalScroll, Vertical, Container, Horizontal, Center
 from textual.reactive import reactive
 from textual.events import Event
 from textual.message import Message
+import math
 
 # These are core classes that are inherrited
 class Stats(): # This is used so I don't have to constantly define stats.
@@ -61,11 +62,6 @@ class Stats(): # This is used so I don't have to constantly define stats.
     
     def set_charisma(self, charisma: int):
         self._charisma = charisma
-
-"""
-I Don't Combine Races and Character classes into a more generalised class as I would like to be able to
-add differences to them individually and tweak the ids. It also allows me to check their url against difference links.
-"""
 
 class Race(): # This is the base race class.
     def __init__(self, raceid: int, racename: str, raceurl: str, statbonuses: Stats):
@@ -237,10 +233,12 @@ Classes = [Barbarian, Bard, Cleric, Druid, Fighter, Monk, Paladin, Ranger, Rogue
 
 # Base entity, useable for characters and monsters
 class Entity():
-    def __init__(self, health: int, stats: Stats):
+
+    def __init__(self, health: int, max_health: int, stats: Stats):
         self._health = health
         self._stats = stats
-    
+        self._max_health = max_health
+
     def set_health(self, amount: int):
         self._health = amount
     
@@ -252,6 +250,12 @@ class Entity():
     
     def get_stats(self) -> Stats:
         return self._stats
+    
+    def set_max_health(self, amount: int):
+        self._max_health = amount
+
+    def get_max_health(self) -> int:
+        return self._max_health
 
 # The following are all used for spells
 # Effects are what actually enable the spells to do anything and are an "executeable"
@@ -276,7 +280,7 @@ class DamageEffect(Effect): # This is a basic Damage Effect
 # Pretty much a glorified dictionary (a.k.a a struct) besides the effect system
 class Spell():
     def __init__(self, name: str, level: int, school, effect, castingtime: int, duration: int, range: int, components: list, description: str, targetdescription: str, activatordescription: str):
-        self._name = name
+        self._name = reactive(name)
         self._level = level
         self._school = school
         self._effect = effect
@@ -334,7 +338,7 @@ class Spell():
 # This is able to be used for NPC's if they are added in the future
 class Character(Entity):
     def __init__(self, name: str, race: Race, charclass: CharClass, stats: Stats, hitpoints: int, armorclass: int, proficiencybonus: int, spells: list[Spell]):
-        super().__init__(100, stats)
+        super().__init__(15, 15, stats)
         self._name = name
         self._race = race
         self._charclass = charclass
@@ -342,6 +346,13 @@ class Character(Entity):
         self.armorclass = armorclass
         self.proficiencybonus = proficiencybonus
         self.spells = spells
+        self.currencypoints = 0
+
+    def get_currencypoints(self) -> int:
+        return self.currencypoints
+
+    def set_currencypoints(self, amount: int):
+        self.currencypoints = amount
     
     def get_race(self) -> Race:
         return self._race
@@ -386,10 +397,75 @@ class APIObject():
         self.name = name
         self.url = url
 
+costcolours = {
+    "pp": "#ddfaff",
+    "gp": "#ffcb69",
+    "ep": "#79d872",
+    "sp": "#778490",
+    "cp": "#b65d17"
+} # This is used for making money pretty !
+
 class Cost():
     def __init__(self, quantity: int, unit: str):
         self.quantity = quantity
         self.unit = unit
+    
+    @staticmethod
+    def translate(amount: str) -> 'Cost':
+        if "cp" in amount:
+            return Cost(amount.split("c")[0], "cp")
+        elif "sp" in amount:
+            return Cost(amount.split("s")[0], "sp")
+        elif "ep" in amount:
+            return Cost(amount.split("e")[0], "ep")
+        elif "gp" in amount:
+            return Cost(amount.split("g")[0], "gp")
+    
+    def translate_to_currency_points(self) -> int:
+        if self.unit == "cp":
+            return self.quantity
+        elif self.unit == "sp":
+            return self.quantity * 10
+        elif self.unit == "ep":
+            return self.quantity * 50
+        elif self.unit == "gp":
+            return self.quantity * 100
+    
+    @staticmethod
+    def translate_from_currency_ponts(amount: int) -> dict:
+        currencies = {}
+
+        gp = amount // 100
+        amount %= 100
+        if gp > 0:
+            currencies["gp"] = gp
+
+        ep = amount // 50
+        amount %= 50
+        if ep > 0:
+            currencies["ep"] = ep
+
+        sp = amount // 10
+        amount %= 10
+        if sp > 0:
+            currencies["sp"] = sp
+
+        cp = amount
+        if cp > 0:
+            currencies["cp"] = cp
+
+        return currencies
+
+    @staticmethod
+    def cost_from_currencypoints(amount: int, currency: str):
+        if currency == "cp":
+            return amount
+        elif currency == "sp":
+            return amount * 10
+        elif currency == "ep":
+            return amount * 50
+        elif currency == "gp":
+            return amount * 100
 
 class Dice():
     def __init__(self, amount: int, dice: int):
@@ -619,6 +695,11 @@ class Player(Character):
         self.inventory = inventory
         self.equipped_inventory = equipped_inventory
         self.level = Level(1)
+        self.in_location = False
+        self.x = 0
+        self.y = 0
+        self.travel_multiplier = 1
+        self.playertile = None
 
     def equip_item(self, item):
         # Add Stats here !!!
@@ -641,87 +722,22 @@ class Player(Character):
             "inventory": [item.index for item in self.inventory],
             "equipped_inventory": [item.index for item in self.equipped_inventory],
             "level": self.level.level,
-            "currentexp": self.level.currentexp
+            "currentexp": self.level.currentexp,
+            "currencypoints": self.currencypoints,
+            "spells": self.spells,
+            "health": self._health,
+            "max_health": self._max_health
         }
-
-
-"""
-Temporary ( or not so temporary, set up of items and the player)
-"""
-
-# A few Items
-Greatsword = Weapon(
-    desc=[],
-    special=[],
-    index="greatsword",
-    name="Greatsword",
-    equipment_category=APIObject("weapon", "Weapon", "/api/2014/equipment-categories/weapon"),
-    gear_category=APIObject("martial-melee", "Martial Melee", "/api/2014/equipment-categories/martial-melee"),
-    cost=Cost(50, "gp"),
-    weight=6,
-    url="/api/2014/equipment/greatsword",
-    contents=[],
-    properties=[
-        APIObject("heavy", "Heavy", "/api/2014/weapon-properties/heavy"),
-        APIObject("two-handed", "Two-Handed", "/api/2014/weapon-properties/two-handed")
-    ],
-    weapon_category="Martial",
-    weapon_range="Melee",
-    category_range="Martial Melee",
-    damage=Damage(Dice.translate("2d6"), APIObject("slashing", "Slashing", "/api/2014/damage-types/slashing")),
-    range={"normal": 5}
-)
-
-Abacus = Item(
-    desc=[],  # No description provided
-    special=[],  # No special traits listed
-    index="abacus",
-    name="Abacus",
-    equipment_category=APIObject("adventuring-gear", "Adventuring Gear", "/api/2014/equipment-categories/adventuring-gear"),
-    gear_category=APIObject("standard-gear", "Standard Gear", "/api/2014/equipment-categories/standard-gear"),
-    cost=Cost(2, "gp"),
-    weight=2,
-    url="/api/2014/equipment/abacus",
-    contents=[],
-    properties=[]
-)
-
-Half_Plate_Armour = Armour(
-    desc=[],
-    special=[],
-    index="half-plate-armor",
-    name="Half Plate Armor",
-    equipment_category=APIObject("armor", "Armor", "/api/2014/equipment-categories/armor"),
-    gear_category=APIObject("armor", "Armor", "/api/2014/equipment-categories/armor"),
-    cost=Cost(750, "gp"),
-    weight=40,
-    url="/api/2014/equipment/half-plate-armor",
-    contents=[],
-    properties=[],
-    armor_category="Medium",
-    armor_class=ArmourClass(15, True, 2),
-    str_minimum=0,
-    stealth_disadvantage=True
-)
-
-
-items = [Greatsword, Abacus, Half_Plate_Armour]
-
-# These maps allow for Items to be easily found from the index
-item_map = {item.index: item for item in items}
-
-# Move this to create game or similar loading area
+    
 player = Player(
-    name="Bobathy",  # temporary
-    race=Human,
-    charclass=Fighter,
-    stats=Stats(10, 10, 10, 10, 10, 10),
-    hitpoints=10,
-    armorclass=15,
-    proficiencybonus=2,
-    spells=[],
-    inventory=items,
-    equipped_inventory=[Greatsword]
+    "Bobathy",
+    Human,
+    Barbarian,
+    Stats(0, 0, 0, 0, 0, 0),
+    15,
+    5,
+    5,
+    [],
+    [],
+    []
 )
-
-player.level.add_current_exp(59)

@@ -9,10 +9,16 @@ from textual.message import Message
 import json
 import random
 import class_segregation as cs
+import item as it
+import terminal as term
 
 # Updated List with All Classes
 
-items=cs.items
+items = it.items
+
+# These maps allow for Items to be easily found from the index
+item_map = {item.index: item for item in items}
+Log(item_map)
 
 savefilepath = ""
 savefile = None
@@ -101,13 +107,16 @@ class LoadScreen(Container): # This lists of every save in a ListView and then a
                     hitpoints=player_data["hitpoints"],
                     armorclass=player_data["armorclass"],
                     proficiencybonus=player_data["proficiencybonus"],
-                    spells=[],
-                    inventory=[cs.item_map[i] for i in player_data["inventory"]],
-                    equipped_inventory=[cs.item_map[i] for i in player_data["equipped_inventory"]]
+                    spells=player_data["spells"],
+                    inventory=[item_map[i] for i in player_data["inventory"]],
+                    equipped_inventory=[item_map[i] for i in player_data["equipped_inventory"]]
                 )
 
                 cs.player.level = cs.Level(player_data["level"])
                 cs.player.level.currentexp = player_data["currentexp"]
+                cs.player.currencypoints = player_data["currencypoints"]
+                cs.player.set_health(player_data.get("health", player_data["hitpoints"]))
+                cs.player.set_max_health(player_data.get("max_health", player_data["hitpoints"]))
             self.app.load_game()
 
     def compose(self):
@@ -126,18 +135,74 @@ class MainPages(Container): # This is the main container for the app that sets u
         global items
 
         with TabbedContent(): # This allows us to have tabs to break up the program into various windows
-            yield HomePage("Home (h)")
+            home = HomePage("Home (h)")
+            home.health = cs.player.get_health()
+            home.max_health = cs.player.get_max_health()
+            home.currencypoints = cs.player.get_currencypoints()
+            yield home
 
             yield MapPage("Map (m)")
             yield InventoryPage("Inventory (i)")
-            yield CharacterPage("Character (c)")
+            character = CharacterPage("Character (c)")
+            character.health = cs.player.get_health()
+            character.max_health = cs.player.get_max_health()
+            character.armour_class = cs.player.get_armorclass()
+            character.currencypoints = cs.player.get_currencypoints()
+            character.exp = cs.player.level.get_current_exp()
+            character.level = cs.player.level.get_level()
+            yield character
 
             with TabPane("Help (?)", id="tab_help"):
                 yield MarkdownViewer(Path("help.md").read_text(), show_table_of_contents=True)
 
+
 class HomePage(TabPane): # This page is dedicated to displaying inputs
+
+    health = reactive(0)
+    max_health = reactive(0)
+    armour_class = reactive(0)
+    currencypoints = reactive(0)
+
     def __init__(self, name):
         super().__init__(name, id="tab_home")
+        self.scroll = VerticalScroll(Static("Welcome to Dungeons and Crawlers!", classes="home_tab-interactions-console-line"), Static("T -:--", id="home_tab-interactions-console-timer", classes="home_tab-interactions-console-timer"), classes="home_tab-interactions-console")
+        self.grid = Grid()
+        self.health = self.app.player._health
+        self.max_health = self.app.player._max_health
+        self.armour_class = self.app.player.get_armorclass()
+
+    def watch_health(self, old_health: int, new_health: int):
+        try:
+            self.query_one("#health_static").update(f"Health: {new_health}/{self.max_health}")
+        except:
+            print("")
+
+    def watch_max_health(self, old_max_health: int, new_max_health: int):
+        try:
+            self.query_one("#health_static").update(f"Health: {self.health}/{new_max_health}")
+        except:
+            print("")
+
+    def watch_armour_class(self, old_armour_class: int, new_armour_class: int):
+        try:
+            self.query_one("#armour_class_static").update(f"Armor Class: {new_armour_class}")
+        except:
+            print("")
+
+    def watch_currencypoints(self, old_currencypoints: int, new_currencypoints: int):
+        try:
+            self.query_one("#moneybagcontainer").remove_children()
+            self.query_one("#moneybagcontainer").mount(Static("Money Bag: ", classes="generic-money_bag-item"))
+            cost2 = cs.Cost.translate_from_currency_ponts(new_currencypoints)
+            for key in cost2:
+                self.query_one("#moneybagcontainer").mount(Static(str(cost2[key]), classes="generic-money_bag-item"))
+                style = Static(key)
+                style.styles.color = cs.costcolours.get(key, "white")
+                self.query_one("#moneybagcontainer").mount(style)
+            if cost2 == {}:
+                self.query_one("#moneybagcontainer").mount(Static("No Money", classes="generic-money_bag-item"))
+        except:
+            print("")
 
     def compose(self):
         yield Static ("Home Page", id="tab_title")
@@ -145,17 +210,28 @@ class HomePage(TabPane): # This page is dedicated to displaying inputs
             with Vertical(classes="home_tab-columns"):
                 # Everything to do with the first column here
                 yield Static("Statistics", classes="generic_tab-title")
-                yield Static("Hit Points: 10", classes="home_tab-statistics-stat")
-                yield Static("Armor Class: 15", classes="home_tab-statistics-stat")
-                yield Static("Proficiency Bonus: 2", classes="home_tab-statistics-stat")
-                yield Static("")
+                yield Static(f"{self.app.player._name}", classes="generic_tab-title")
+                yield Static(f"Health: {self.health}/{self.max_health}", classes="home_tab-statistics-stat", id="health_static")
+                yield Static(f"Armor Class: {self.armour_class}", classes="home_tab-statistics-stat", id="armour_class_static")
+                yield Static(f"Proficiency Bonus: {self.app.player.get_proficiencybonus()}", classes="home_tab-statistics-stat")
+                yield Rule()
+                cost2 = cs.Cost.translate_from_currency_ponts(cs.player.currencypoints)
+                with Horizontal(classes="generic-money_bag", id="moneybagcontainer"):
+                    yield Static(f"Money Bag: ", classes="generic-money_bag-item")
+                    for key in cost2:
+                        yield Static(str(cost2[key]), classes="generic-money_bag-item")
+                        style = Static(key)
+                        style.styles.color = cs.costcolours.get(key, "white")
+                        yield style
+                    if cost2 == {}:
+                        yield Static("No Money", classes="generic-money_bag-item")
+                yield Rule()
                 yield Static("Equipped Items: ", classes="home_tab-statistics-subheading")
                 with VerticalScroll(classes="home_tab-statistics-verticalscroll", id="equipped_items_container"):
                     for i in cs.player.equipped_inventory: # Replace this with equipped items eventualls
                         yield i.get_widget(cs.player)
             with Vertical(classes="home_tab-interactions-column"):
-                with VerticalScroll(classes="home_tab-interactions-console"):
-                    yield Static("Welcome to the world of Dungeons and Crawlers", classes="home_tab-interactions-console-line")
+                yield self.scroll
                 yield Rule()
                 with Center():
                     with Horizontal(classes="home_tab-command_input"):
@@ -163,6 +239,55 @@ class HomePage(TabPane): # This page is dedicated to displaying inputs
                         yield Button("", id="home_tab-interactions-command_button", classes="home_tab-interactions-command_input-button")
             with Vertical(classes="home_tab-columns"):
                 yield Static("Minimap", classes="generic_tab-title")
+                yield Static(f"Town: {self.app.town.name}", classes="generic_tab-title")
+                self.grid = self.app.grid_view
+                self.app.grid_view = self.grid
+                self.app.grid_initialised = True
+                yield self.grid
+
+    def on_mount(self):
+        self.app.grid_initialised = True
+        self.grid = self.app.grid_view
+        self.app.grid_view = self.grid
+        self.grid.update_view()
+                
+
+    def on_button_pressed(self, event: Button.Pressed) -> None:
+        if event.button.id == "home_tab-interactions-command_button":
+            if event.button.parent.query_children("Input").first().value == "":
+                return
+            self.handle_command(event.button.parent.query_children("Input").first().value)
+            event.button.parent.query_children("Input").first().value = ""
+
+    def on_input_submitted(self, event: Input.Submitted) -> None:
+        if event.input.value == "":
+            return
+        
+        self.handle_command(event.value)
+
+        event.input.value = ""
+        
+
+    def handle_command(self, command) -> None:
+        self.terminal_message(f"{cs.player._name} >> {command}")
+
+        command = command.lower()
+        player = cs.player
+        player_tile = self.app.playertile
+        
+        # Handle building commands
+        if player_tile.current_building:
+            if player_tile.current_building.type == 'inn':
+                player_tile.current_building.rest(player, self.app.grid_view)
+            elif player_tile.current_building.type == 'blacksmith' and command.startswith('buy '):
+                item_name = command[4:].strip()
+                player_tile.current_building.buy_item(player, item_name, self.app.grid_view)
+            else:
+                self.terminal_message(f"Unknown command: {command}")
+            self.app.grid_view.focus()
+        else:
+            self.terminal_message(f"{player._name} >> {command}")
+        
                 
     def refresh_content(self):
         container = self.query_one("#equipped_items_container")
@@ -172,6 +297,20 @@ class HomePage(TabPane): # This page is dedicated to displaying inputs
             widget._watch_collapsed(cs.Item.on_collapsible_toggled)
             container.mount(widget)
 
+    def terminal_message(self, message: str):
+        # Mounting new messages in the inner container appends them underneath previously added messages
+        self.scroll.mount(
+            Static(message, classes="home_tab-interactions-console-line")
+        )
+
+        # Check the command here
+        Log("TODO: Log Command Here")
+    
+    def terminal_rule(self):
+        self.scroll.mount(
+            Rule()
+        )
+    
 
 class MapPage(TabPane): # Self explanatory, just text and columns aswell as an ascii art of what the map might look like.
     def __init__(self, name):
@@ -235,13 +374,81 @@ class InventoryPage(TabPane): # This just loops through all the items that are i
                 for item in range(column, len(cs.player.inventory), 3):
                     widget = cs.player.inventory[item].get_widget(cs.player)
                     widget._watch_collapsed(cs.Item.on_collapsible_toggled)
-                    container.mount(widget)          
+                    container.mount(widget)
         except:
             print("--- This is an okay error. ---")
 
 class CharacterPage(TabPane): # This just displays all the character ifnormation for the player, like stats. Just text pretty much.
+
+    health = reactive(0)
+    max_health = reactive(0)
+    armour_class = reactive(0)
+    currencypoints = reactive(0)
+    level = reactive(0)
+    exp = reactive(0)
+    stats = reactive(False)
+
     def __init__(self, name):
         super().__init__(name, id="tab_character")
+
+    #     self.level = cs.player.level.get_level()
+    #     self.exp = cs.player.level.get_current_exp()
+    #     self.max_exp = cs.player.level.required_exp(self.level + 1)
+
+    def watch_health(self, old_health: int, new_health: int):
+        try:
+            self.query_one("#health_static").update(f"Health: {new_health}/{self.max_health}")
+        except:
+            print("")
+
+    def watch_max_health(self, old_max_health: int, new_max_health: int):
+        try:
+            self.query_one("#health_static").update(f"Health: {self.health}/{new_max_health}")
+        except:
+            print("")
+
+    def watch_armour_class(self, old_armour_class: int, new_armour_class: int):
+        try:
+            self.query_one("#armour_class_static").update(f"Armor Class: {new_armour_class}")
+        except:
+            print("")
+
+    def watch_currencypoints(self, old_currencypoints: int, new_currencypoints: int):
+        try:
+            self.query_one("#moneybagcontainer").remove_children()
+            self.query_one("#moneybagcontainer").mount(Static("Money Bag: ", classes="generic-money_bag-item"))
+            cost2 = cs.Cost.translate_from_currency_ponts(new_currencypoints)
+            for key in cost2:
+                self.query_one("#moneybagcontainer").mount(Static(str(cost2[key]), classes="generic-money_bag-item"))
+                style = Static(key)
+                style.styles.color = cs.costcolours.get(key, "white")
+                self.query_one("#moneybagcontainer").mount(style)
+            if cost2 == {}:
+                self.query_one("#moneybagcontainer").mount(Static("No Money", classes="generic-money_bag-item"))
+        except:
+            print("")
+
+    def watch_level(self, old_level: int, new_level: int):
+        try:
+            self.query_one("#level_static").update(f"Level: {new_level} ({cs.player.level.get_current_exp()}/{cs.player.level.required_exp(cs.player.level.level + 1)})")
+            self.stats = False if self.stats else True
+        except:
+            print("")
+    
+    def watch_exp(self, old_exp: int, new_exp: int):
+        try:
+            if new_exp != 0:
+                self.query_one("#exp_progress_bar").advance(new_exp - old_exp)
+        except:
+            print("")
+
+    def watch_stats(self, old_stats: bool, new_stats: bool):
+        try:
+            ability_scores = cs.player.get_stats().to_dict()
+            for stat in ability_scores:
+                self.query_one(f"#{stat}_stat").update(f"{stat.capitalize()}: {ability_scores[stat]}")
+        except:
+            print("")
 
     def compose(self):
         yield Static("Character Page", id="tab_title")
@@ -257,8 +464,8 @@ class CharacterPage(TabPane): # This just displays all the character ifnormation
 
                 yield Static("")
 
-                yield Static(f"Level: {cs.player.level.get_level()} ({cs.player.level.get_current_exp()}/{cs.player.level.required_exp(cs.player.level.level + 1)})", id="label_level", classes="character_tab-stat")
-                progressbar = ProgressBar(total=cs.Level.required_exp(cs.player.level.get_level() + 1), show_eta=False, show_percentage=True)
+                yield Static(f"Level: {cs.player.level.get_level()} ({cs.player.level.get_current_exp()}/{cs.player.level.required_exp(cs.player.level.level + 1)})", id="level_static", classes="character_tab-stat")
+                progressbar = ProgressBar(total=cs.Level.required_exp(cs.player.level.get_level() + 1), show_eta=False, show_percentage=True, id="exp_progress_bar")
                 progressbar.advance(cs.player.level.get_current_exp())
                 yield progressbar
 
@@ -271,9 +478,22 @@ class CharacterPage(TabPane): # This just displays all the character ifnormation
 
                 yield Static("")
 
-                yield Static(f"Hit Points: {cs.player.get_hitpoints()}")
-                yield Static(f"Armor Class: {cs.player.get_armorclass()}")
+                yield Static(f"Health: {cs.player.get_health()}", id="health_static")
+                yield Static(f"Armor Class: {cs.player.get_armorclass()}", id="armour_class_static")
                 yield Static("Proficiency Bonus: 2")
+
+                yield Static("")
+
+                cost2 = cs.Cost.translate_from_currency_ponts(cs.player.currencypoints)
+                with Horizontal(classes="generic-money_bag", id="moneybagcontainer"):
+                    yield Static(f"Money Bag: ", classes="generic-money_bag-item")
+                    for key in cost2:
+                        yield Static(str(cost2[key]), classes="generic-money_bag-item")
+                        style = Static(key)
+                        style.styles.color = cs.costcolours.get(key, "white")
+                        yield style
+                    if cost2 == {}:
+                        yield Static("No Money", classes="generic-money_bag-item")
             with Vertical():
                 yield Static("Spells", classes="character_tab-column_title")
 
@@ -372,9 +592,14 @@ class CharacterCreator(Container): # Creates the character
                 armorclass=15,
                 proficiencybonus=2,
                 spells=[],
-                inventory=[cs.Greatsword],
+                inventory=[it.Greatsword],
                 equipped_inventory=[]
             )
+
+            cs.player.set_currencypoints(245)
+
+            cs.player.set_health(10)
+            cs.player.set_max_health(20)
 
             if savefile:
                 savefile.set_player(cs.player.serialize())
@@ -407,16 +632,37 @@ class MyApp(App): # This is the main app container that composes everything
     TITLE = "Dungeons And Critters"
     SUB_TITLE = "Version 1.0 (WIP)"
     CSS_PATH = "textual-main.tcss"
-    BINDINGS = [("h", "tab_home", "Home"), ("m", "tab_map", "Map"), ("i", "tab_inventory", "Inventory"), ("c", "tab_character", "Character"), ("?", "tab_help", "Help")]
+    BINDINGS = [("h", "tab_home", "Home"), ("m", "tab_map", "Map"), ("i", "tab_inventory", "Inventory"), ("c", "tab_character", "Character"), ("?", "tab_help", "Help"),
+                ("left", "move('left')", "Move Left"),
+                ("right", "move('right')", "Move Right"),
+                ("up", "move('up')", "Move Up"),
+                ("down", "move('down')", "Move Down")]
+
+    def __init__(self):
+        super().__init__()
+        self.map = term.LocationMap(term.sample_town())
+        self.playertile = term.PlayerTile(6, 6)
+        self.playertile.app = self
+        self.grid_view = term.TownView(self.playertile, self.map)
+        self.grid_view.can_focus = True
+        self.town = term.create_sample_town(self.playertile, self.map)
+        self.grid_initialised = False
+        self.player = cs.player
 
     def compose(self) -> ComposeResult: # Displays load screen before the main pages
         yield Header()
         yield LoadScreen()  # Display save/load screen first
         # yield MainPages()
 
+    def action_move(self, direction: str):
+        if self.grid_initialised:
+            self.playertile.move(direction, self.map, self.town)
+            self.grid_view.update_view()
+
     def load_game(self) -> None: 
         self.query_one(LoadScreen).remove()  # Remove the save/load screen
         self.mount(MainPages())  # Show the main app after loading
+        # Load the reactive stats
 
     def load_made_game(self) -> None: # The game is made so it gets rid of the character creator.
         self.query_one(CharacterCreator).remove()
@@ -439,11 +685,12 @@ class MyApp(App): # This is the main app container that composes everything
             event.tab.refresh_content()
         elif event.tab.id == "tab_home":
             event.tab.refresh_content()
+        elif event.tab.id == "tab_character":
+            event.tab.refresh_content()
 
     # This sets up all of the tabs
     def action_tab_home(self) -> None:
         self.query_one(TabbedContent).active = "tab_home"
-
     def action_tab_map(self) -> None:
         self.query_one(TabbedContent).active = "tab_map"
 

@@ -21,12 +21,17 @@
             "dagger",
             "dagger",
             "shortsword",
+            "dagger",
+            "dagger",
+            "dagger",
             "dagger"
         ],
-        "equipped_inventory": [],
+        "equipped_inventory": [
+            "shortsword"
+        ],
         "level": 1,
         "currentexp": 55,
-        "currencypoints": 995,
+        "currencypoints": 365,
         "spells": [],
         "health": 50,
         "max_health": 50

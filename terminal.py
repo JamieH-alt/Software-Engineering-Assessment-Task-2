@@ -60,6 +60,9 @@ class LocationMap:
     
     def is_enterable(self, x, y):
         return self.get_tile(x, y) in ["A", "B", "I"]
+
+    def is_exit(self, x, y):
+        return self.get_tile(x, y) == "E"
     
 class PlayerTile:
     def __init__(self, x, y):
@@ -80,10 +83,17 @@ class PlayerTile:
                 if building:
                     self.current_building = building
                     self.handle_building_interaction(building, town.townview)
+            elif game_map.is_exit(new_x, new_y):
+                self.handle_exit_interaction(town.townview)
             else:
                 # Play sound here
                 Log("TODO Play Sound System")
     
+    def handle_exit_interaction(self, location_view):
+        app = location_view.app
+        home_tab = app.query_one("#tab_home")
+        location_view.exit()
+
     def handle_building_interaction(self, building, location_view):
         app = location_view.app
         home_tab = app.query_one("#tab_home")
@@ -132,26 +142,29 @@ def create_sample_town(playertile: PlayerTile, game_map: LocationMap) -> 'Town':
                             [item.Shortsword, item.Chain_Mail, item.Greataxe, item.Dagger])
     adventurers_guild = Building("Adventurer's Guild", "guild", 10, 6, "A",
                                  "A gathering place for brave heroes seeking quests")
-    return Town("Oakenshore", "A bustling coatal town, and the city of oaks", [inn, blacksmith, adventurers_guild], TownView(playertile, game_map))
+    exit = Exit(5, 13, 8, 13, "E")
+    return Town("Oakenshore", "A bustling coatal town, and the city of oaks", [inn, blacksmith, adventurers_guild], exit, TownView(playertile, game_map))
 
 # This is the 7x7 display around the player
 class LocationView(Grid):
+
     def __init__(self, player: PlayerTile, game_map: LocationMap):
-        super().__init__()
+        super().__init__(id="minimap_view")
         self.player = player
         self.game_map = game_map
         self.cells = []
-        self.available = True # This will be set to available when the player is ACTUALLY at a location
+        self.available = 1 # This will be set to available when the player is ACTUALLY at a location
         self.TILE_COLORS = {
             "P": "white", #Player
             "R": "#8c5740", # Road
             "G": "#476850", # Dirt
             "X": "grey", # Wall
             " ": "black", #Empty / Out of bounds area
+            "E": "#ffa840" # Exit
         }
     
     def compose(self) -> ComposeResult:
-        if self.available == False:
+        if self.available == 0:
             yield Static("N/A")
         else:
             half = 14 // 2
@@ -162,8 +175,9 @@ class LocationView(Grid):
                     yield tile
     
     def update_view(self):
-        if self.available == False:
-            return
+        if self.available == 0:
+            self.remove_children()
+            self.mount(Static("N/A"))
         half = 14 // 2
         for dy in range(-half, half + 1):
             for dx in range(-half, half + 1):
@@ -171,8 +185,19 @@ class LocationView(Grid):
                 y = self.player.y + dy
                 char = "P" if dx == 0 and dy == 0 else self.game_map.get_tile(x, y)
                 index = (dy + half) * 14 + (dx + half)
-                Log(self.cells)
                 self.cells[index].set_char(char)
+    
+    def exit(self):
+        self.available = 0
+        minimap_container = self.app.query_one("#minimapcontainer")
+        minimap_container.remove_children()
+        minimap_container.mount(Static("Minimap", classes="generic_tab-title"))
+        minimap_container.mount(Static(f"Town: ---", classes="generic_tab-title"))
+    
+    @staticmethod
+    def enter(app: App, player: PlayerTile, game_map: LocationMap):
+        container = app.query_one("#minimapcontainer")
+        container.mount(LocationView(player, game_map))
 
 class TownView(LocationView):
     def __init__(self, player: PlayerTile, game_map: LocationMap):
@@ -180,23 +205,46 @@ class TownView(LocationView):
         self.TILE_COLORS["I"] = "#95d8ae" # Inn
         self.TILE_COLORS["A"] = "#e7a0bd" # Adventurers Guild
         self.TILE_COLORS["B"] = "#95d8ae" # Blacksmith
-        self.TILE_COLORS["E"] = "#ffa840" # Exit
+
+    def exit(self):
+        self.available = 0
+        minimap_container = self.app.query_one("#minimapcontainer")
+        self.app.query_one("#tab_home").terminal_message(f"You leave the town...!")
+        minimap_container.remove_children()
+        minimap_container.mount(Static("Minimap", classes="generic_tab-title"))
+        minimap_container.mount(Static(f"Town: ---", classes="generic_tab-title"))
+
+    @staticmethod
+    def enter(app: App, player: PlayerTile, game_map: LocationMap):
+        container = app.query_one("#minimapcontainer")
+        container.mount(LocationView(player, game_map))
 
 # This is a copy of the player class for reference as I don't want to use circular import fixes atm.
 
 class Town:
-    def __init__(self, name, description, buildings, townview: TownView):
+    def __init__(self, name, description, buildings, exit, townview: TownView):
         self.name = name
         self.description = description
         self.buildings = buildings  # List of building objects
         self.townview = townview
+        self.exit = exit
     
     def get_building_at(self, x, y):
         for building in self.buildings:
             if building.x == x and building.y == y:
                 return building
+        if x in range(exit.start_x, exit.end_x) and y in range(exit.start_y, exit.end_y):
+            return exit
         return None
-    
+
+class Exit:
+    def __init__(self, start_x, start_y, end_x, end_y, tile_char):
+        self.start_x = start_x
+        self.start_y = start_y
+        self.end_x = end_x
+        self.end_y = end_y
+        self.tile_char = tile_char
+
 class Building:
     def __init__(self, name, type, x, y, tile_char, description):
         self.name = name

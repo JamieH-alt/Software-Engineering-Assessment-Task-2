@@ -237,7 +237,7 @@ class HomePage(TabPane): # This page is dedicated to displaying inputs
                     with Horizontal(classes="home_tab-command_input"):
                         yield Input(placeholder="Enter a command: ", id="home_tab-interactions-command_input", classes="home_tab-interactions-command_input-input")
                         yield Button("", id="home_tab-interactions-command_button", classes="home_tab-interactions-command_input-button")
-            with Vertical(classes="home_tab-columns"):
+            with Vertical(classes="home_tab-columns", id="minimapcontainer"):
                 yield Static("Minimap", classes="generic_tab-title")
                 yield Static(f"Town: {self.app.town.name}", classes="generic_tab-title")
                 self.grid = self.app.grid_view

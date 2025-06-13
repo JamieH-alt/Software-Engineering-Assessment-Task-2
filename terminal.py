@@ -92,6 +92,13 @@ class PlayerTile:
     def handle_exit_interaction(self, location_view):
         app = location_view.app
         home_tab = app.query_one("#tab_home")
+        home_tab.terminal_message("You can travel to the following towns: ")
+        home_tab.terminal_message("1. Shorecliffs")
+        home_tab.terminal_message("2. Foothills")
+        home_tab.terminal_message("3. Highlands Valor")
+        home_tab.terminal_message("4. Oakenshore")
+        home_tab.terminal_message(">> Type: Travel (number here)")
+        home_tab.terminal_message("Example: Travel 1")
         location_view.exit()
 
     def handle_building_interaction(self, building, location_view):
@@ -114,7 +121,7 @@ class PlayerTile:
             home_tab.terminal_message(building.description)
             home_tab.terminal_message("Greetings adventurer! We don't have any quests available!")
 
-def sample_town():
+def oakenshore():
     layout = [
     "XXXXXXXXXXXXXX",
     "XXXRRRXXXXXRRX",
@@ -133,7 +140,64 @@ def sample_town():
     ]
     return [list(row) for row in layout]
 
-def create_sample_town(playertile: PlayerTile, game_map: LocationMap) -> 'Town':
+def shorecliffs_tiles():
+    layout = [
+        "XXXXXXXXXXXXXX",
+        "XRRRRRRRRRRRRX",
+        "XRGGRRRRRRRRRX",
+        "XRRRRRRRRRRRRX",
+        "XRRRRRRRRRRRRX",
+        "XBRRRRRRRRRRRX",
+        "XRRRRRRRRRRRRX",
+        "XRRRRRRRRRRRRX",
+        "XRRRRRRRRRRRIX",
+        "XRRRRRRRRRRRRX",
+        "XRRRRRRRRRRRRX",
+        "XRRRRRRRRRRRRX",
+        "XRRRRRRRRRRARX",
+        "XXXXXXEEXXXXXX"
+    ]
+    return [list(row) for row in layout]
+
+def foothills_tiles():
+    layout = [
+        "XXXXXXXXXXXXXX",
+        "XRRRRRRRRRIRRX",
+        "XRRRRRRRRRRRRX",
+        "XBRRRRRRRRRRRX",
+        "XRRRRRRRRRRRRX",
+        "XRRRRRRRRRRRRX",
+        "XRRRRRRRRRRRRX",
+        "XRRRRRRRRRRRRX",
+        "XRRRRRRRRRRRRX",
+        "XRRRRRRRRRRRRX",
+        "XRRRRRRRRRRRRX",
+        "XRRRRRRRRRRRRX",
+        "XRRRRRRRRRRRRX",
+        "XXXXXXEEXXXXXX"
+    ]
+    return [list(row) for row in layout]
+
+def highlands_valor_tiles():
+    layout = [
+        "XXXXXXXXXXXXXX",
+        "XRRRRRRRRRRRRX",
+        "XARRRRRRRRRRRX",
+        "XRRRRRRRRRRRRX",
+        "XRRRRRRRRRRRIX",
+        "XRRRRRRRRRRRRX",
+        "XRRRRRRRRRRRRX",
+        "XRRRRRRRRRRRRX",
+        "XRRRRRRRRRRRRX",
+        "XRRRRRRRRRRRRX",
+        "XRRRRRRRRRRRRX",
+        "XRRRRRRRRRRRRX",
+        "XBRRRRRRRRRRRX",
+        "XXXXXXEEXXXXXX"
+    ]
+    return [list(row) for row in layout]
+
+def create_oakenshore(playertile: PlayerTile, game_map: LocationMap) -> 'Town':
     inn = Inn("The Sleeping Dragon Inn", 2, 4, "I",
               "A Cozy inn with warm beds and healthy meals",
               15, 10)
@@ -144,6 +208,18 @@ def create_sample_town(playertile: PlayerTile, game_map: LocationMap) -> 'Town':
                                  "A gathering place for brave heroes seeking quests")
     exit = Exit(5, 13, 8, 13, "E")
     return Town("Oakenshore", "A bustling coatal town, and the city of oaks", [inn, blacksmith, adventurers_guild], exit, TownView(playertile, game_map))
+
+def create_shorecliff_tiles(playertile: PlayerTile, game_map: LocationMap):
+    inn = Inn('The Highland Fox Inn', 12, 8, "I",
+              "The Inn above the Clouds and Sea",
+              20, 12)
+    blacksmith = Blacksmith("Ironforge Armory", 1, 5, "B",
+                            "Forged in the eye of the sea",
+                            [item.Longbow, item.Warhammer, item.Spear, item.Splint_Armor])
+    adventures_guild = Building("Adventurer's Guild", "guild", 11, 12, "A",
+                                "Shorecliff Branch - A gathering place for breave heroes seeking quests")
+    exit = Exit(6, 13, 7, 13, "E")
+    return Town("Shorecliff", "A futuristic town above the sea in the highlands", [inn, blacksmith, adventures_guild], exit, TownView(playertile, game_map))
 
 # This is the 7x7 display around the player
 class LocationView(Grid):
@@ -233,8 +309,8 @@ class Town:
         for building in self.buildings:
             if building.x == x and building.y == y:
                 return building
-        if x in range(exit.start_x, exit.end_x) and y in range(exit.start_y, exit.end_y):
-            return exit
+        if x in range(self.exit.start_x, self.exit.end_x) and y in range(self.exit.start_y, self.exit.end_y):
+            return self.exit
         return None
 
 class Exit:

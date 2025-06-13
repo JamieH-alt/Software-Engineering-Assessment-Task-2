@@ -274,7 +274,22 @@ class HomePage(TabPane): # This page is dedicated to displaying inputs
         command = command.lower()
         player = cs.player
         player_tile = self.app.playertile
-        
+
+        if command.split(" ")[0] == "travel":
+            if command.split(" ")[1] == "1":
+                self.app.map = term.LocationMap(term.shorecliffs_tiles())
+                player_tile.x = 6
+                player_tile.y = 6
+                self.app.grid_view = term.TownView(player_tile, self.app.map)
+                self.app.grid_view.can_focus = True
+                self.app.grid_initialised = True
+                self.grid = self.app.grid_view
+                self.app.grid_view = self.grid
+                self.query_one("#minimapcontainer").remove_children()
+                self.query_one("#minimapcontainer").mount(Static("Minimap", classes="generic_tab-title"))
+                self.query_one("#minimapcontainer").mount(Static(f"Town: {self.app.town.name}", classes="generic_tab-title"))
+                self.query_one("#minimapcontainer").mount(self.grid)
+
         # Handle building commands
         if player_tile.current_building:
             if player_tile.current_building.type == 'inn':
@@ -285,8 +300,6 @@ class HomePage(TabPane): # This page is dedicated to displaying inputs
             else:
                 self.terminal_message(f"Unknown command: {command}")
             self.app.grid_view.focus()
-        else:
-            self.terminal_message(f"{player._name} >> {command}")
         
                 
     def refresh_content(self):
@@ -640,12 +653,12 @@ class MyApp(App): # This is the main app container that composes everything
 
     def __init__(self):
         super().__init__()
-        self.map = term.LocationMap(term.sample_town())
+        self.map = term.LocationMap(term.oakenshore())
         self.playertile = term.PlayerTile(6, 6)
         self.playertile.app = self
         self.grid_view = term.TownView(self.playertile, self.map)
         self.grid_view.can_focus = True
-        self.town = term.create_sample_town(self.playertile, self.map)
+        self.town = term.create_oakenshore(self.playertile, self.map)
         self.grid_initialised = False
         self.player = cs.player
 

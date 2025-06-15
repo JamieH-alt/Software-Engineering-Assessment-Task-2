@@ -13,12 +13,9 @@ Inside location will have 2 different types of locations
 Dungeon
 Town
 
-Dungeons will be filled with chests and "enemy's"
-Enemy's can attack within 2 squares of the player or something similar.
-
 Towns will just be for the player to walk around and show in.
 
-The map for the dungeons and Enemies will be displayed on the "minimap section"
+Dungeons will be a text based combat sim.
 """
 from textual.app import App, ComposeResult
 from textual.widgets import Static, Log
@@ -27,6 +24,7 @@ from textual.reactive import reactive
 from textual import events
 import class_segregation as cs
 import item
+import random
 
 # This is all focused on the MiniMap and it's loading system ( For Towns and Dungeons )
 
@@ -97,9 +95,24 @@ class PlayerTile:
         home_tab.terminal_message("2. Foothills")
         home_tab.terminal_message("3. Highlands Valor")
         home_tab.terminal_message("4. Oakenshore")
+        home_tab.terminal_message("--- Dungeons ---")
+        home_tab.terminal_message("5. Windwood Dungeon (E-Class)")
         home_tab.terminal_message(">> Type: Travel (number here)")
         home_tab.terminal_message("Example: Travel 1")
         location_view.exit()
+
+    @staticmethod
+    def travel_message(app):
+        home_tab = app.query_one("#tab_home")
+        home_tab.terminal_message("You can travel to the following towns: ")
+        home_tab.terminal_message("1. Shorecliffs")
+        home_tab.terminal_message("2. Foothills")
+        home_tab.terminal_message("3. Highlands Valor")
+        home_tab.terminal_message("4. Oakenshore")
+        home_tab.terminal_message("--- Dungeons ---")
+        home_tab.terminal_message("5. Windwood Dungeon (E-Class)")
+        home_tab.terminal_message(">> Type: Travel (number here)")
+        home_tab.terminal_message("Example: Travel 1")
 
     def handle_building_interaction(self, building, location_view):
         app = location_view.app
@@ -171,7 +184,7 @@ def foothills_tiles():
         "XRRRRRRRRRRRRX",
         "XRRRRRRRRRRRRX",
         "XRRRRRRRRRRRRX",
-        "XRRRRRRRRRRRRX",
+        "XRRRRRRRRRRRAX",
         "XRRRRRRRRRRRRX",
         "XRRRRRRRRRRRRX",
         "XXXXXXEEXXXXXX"
@@ -210,16 +223,40 @@ def create_oakenshore(playertile: PlayerTile, game_map: LocationMap) -> 'Town':
     return Town("Oakenshore", "A bustling coatal town, and the city of oaks", [inn, blacksmith, adventurers_guild], exit, TownView(playertile, game_map))
 
 def create_shorecliff_tiles(playertile: PlayerTile, game_map: LocationMap):
-    inn = Inn('The Highland Fox Inn', 12, 8, "I",
+    inn = Inn("The Highland Fox Inn", 12, 8, "I",
               "The Inn above the Clouds and Sea",
               20, 12)
     blacksmith = Blacksmith("Ironforge Armory", 1, 5, "B",
                             "Forged in the eye of the sea",
                             [item.Longbow, item.Warhammer, item.Spear, item.Splint_Armor])
     adventures_guild = Building("Adventurer's Guild", "guild", 11, 12, "A",
-                                "Shorecliff Branch - A gathering place for breave heroes seeking quests")
+                                "Shorecliff Branch - A gathering place for brave heroes seeking quests!")
     exit = Exit(6, 13, 7, 13, "E")
     return Town("Shorecliff", "A futuristic town above the sea in the highlands", [inn, blacksmith, adventures_guild], exit, TownView(playertile, game_map))
+
+def create_foothills_tiles(playertile: PlayerTile, game_map: LocationMap):
+    inn = Inn("Foothills Inn", 10, 1, "I",
+              "Sleep tight",
+              20, 20)
+    blacksmith = Blacksmith("Hilly Smithy", 1, 3, "B",
+                            "Made in the hilly meadows of Elednor",
+                            [item.Bedroll, item.Battleaxe, item.Spike_iron, item.Small_knife])
+    adventurers_guild = Building("Adventurer's Guild", "guild", 12, 10, "A",
+                                 "Foothills Branch - A gathering place for brave heroes seeking quests!")
+    exit = Exit(6, 13, 7, 13, "E")
+    return Town("Foothills", "A small meadow-bound town of Elednor", [inn, blacksmith, adventurers_guild], exit, TownView(playertile, game_map))
+
+def create_highlands_valor_tiles(playertile: PlayerTile, game_map: LocationMap):
+    inn = Inn("Highlands Valor's Soul", 12, 4, "I",
+              "The soul of the truest highlands of Elednor",
+              40, 30)
+    blacksmith = Blacksmith("Passionate Makers", 1, 12, "B",
+                            "Forged in the passionate flame of a dwarf's heart",
+                            [item.Dagger, item.Small_knife, item.Light_hammer, item.Mace])
+    adventurers_guild = Building("Adventurer's guild", "guild", 1, 2, "A",
+                                 "Highlands Valor Branch - A gathering place for brave heroes seeking quests!")
+    exit = Exit(6, 13, 7, 13, "E")
+    return Town("Highlands Valor", "The truest highlands of Elednor", [inn, blacksmith, adventurers_guild], exit, TownView(playertile, game_map))
 
 # This is the 7x7 display around the player
 class LocationView(Grid):
@@ -294,8 +331,6 @@ class TownView(LocationView):
     def enter(app: App, player: PlayerTile, game_map: LocationMap):
         container = app.query_one("#minimapcontainer")
         container.mount(LocationView(player, game_map))
-
-# This is a copy of the player class for reference as I don't want to use circular import fixes atm.
 
 class Town:
     def __init__(self, name, description, buildings, exit, townview: TownView):
@@ -436,3 +471,163 @@ class Blacksmith(Building):
         character_tab.currencypoints = player.get_currencypoints()
         app.save_game()
         app.query_one("#tab_inventory").refresh_content()
+
+class CombatState:
+    def __init__(self, player, zombies, home_tab):
+        self.player = player
+        self.zombies = zombies
+        self.home_tab = home_tab
+        self.current_turn = "player"
+        self.active = True
+        self.waiting_for_input = False
+        self.current_prompt = ""
+
+def windwood_dungeon(player: cs.Player, home_tab):
+    zombiecount = random.randrange(1, 4)
+    zombies = [cs.Zombie(max_health=random.randint(8, 12), damage_dice=cs.Dice(1, 6)) 
+               for _ in range(zombiecount)]
+    
+    home_tab.terminal_message("You enter the Windwood Forest dungeon. The ground is slathered in green mold and reeks of death.")
+    home_tab.terminal_message(f"You encounter {len(zombies)} zombies!")
+    
+    # Create and store combat state
+    combat = CombatState(player, zombies, home_tab)
+    home_tab.app.combat_state = combat
+    start_player_turn(combat)
+
+def start_player_turn(combat):
+    combat.current_turn = "player"
+    combat.waiting_for_input = True
+    combat.home_tab.terminal_message("--- YOUR TURN ---")
+    combat.home_tab.terminal_message(f"Your health: {cs.player.get_health()}/{cs.player.get_max_health()}")
+    
+    # List available weapons (both equipped and in inventory)
+    weapons = []
+    for item in cs.player.equipped_inventory:
+        try:
+            item.is_weapon()
+            weapons.append(item)
+        except:
+            print("")
+    
+    combat.home_tab.terminal_message("Available weapons:")
+    for i, weapon in enumerate(weapons, 1):
+        combat.home_tab.terminal_message(f"{i}. {weapon.name} (Damage: {weapon.damage.damage_dice.retranslate()})")
+    
+    combat.home_tab.terminal_message("Type 'attack X' to use weapon X or 'flee' to escape")
+    combat.current_prompt = "What will you do? "
+
+def process_combat_command(combat, command):
+    command = command.lower().strip()
+    
+    if command.startswith("attack"):
+        try:
+            # Get weapon number from command
+            weapon_num = int(command.split()[1])
+            weapons = []
+            for item in cs.player.equipped_inventory:
+                try:
+                    item.is_weapon()
+                    weapons.append(item)
+                except:
+                    print("")
+            
+            if 1 <= weapon_num <= len(weapons):
+                weapon = weapons[weapon_num-1]
+                target = random.choice(combat.zombies)
+                
+                # Roll damage
+                damage_rolls = [random.randint(1, int(weapon.damage.damage_dice.dice)) 
+                               for _ in range(int(weapon.damage.damage_dice.amount))]
+                total_damage = sum(damage_rolls)
+                
+                # Apply damage
+                target.health -= total_damage
+                combat.home_tab.terminal_message(f"You hit a zombie with {weapon.name} for {total_damage} damage! ({damage_rolls})")
+                
+                # Check if zombie died
+                if target.health <= 0:
+                    combat.home_tab.terminal_message("The zombie dies!")
+                    combat.zombies.remove(target)
+                
+                # Check if combat ended
+                if not combat.zombies:
+                    end_combat_victory(combat)
+                    return
+                
+                # Zombie turn
+                start_zombie_turn(combat)
+            else:
+                combat.home_tab.terminal_message("Invalid weapon number!")
+                combat.waiting_for_input = True
+        except (ValueError, IndexError):
+            combat.home_tab.terminal_message("Invalid command! Use 'attack X' where X is weapon number")
+            combat.waiting_for_input = True
+    
+    elif command == "flee":
+        if random.random() < 0.5:  # 50% chance to escape
+            combat.home_tab.terminal_message("You successfully flee from the dungeon!")
+            combat.home_tab.app.combat_state = None
+        else:
+            combat.home_tab.terminal_message("You failed to escape!")
+            start_zombie_turn(combat)
+    
+    else:
+        combat.home_tab.terminal_message("Invalid command! Use 'attack X' or 'flee'")
+        combat.waiting_for_input = True
+
+def start_zombie_turn(combat):
+    combat.current_turn = "zombie"
+    combat.waiting_for_input = False
+    combat.home_tab.terminal_message("--- ZOMBIES' TURN ---")
+    
+    for zombie in combat.zombies:
+        damage = zombie.attack()
+        cs.player.set_health(cs.player.get_health() - damage)
+        combat.home_tab.terminal_message(f"A zombie hits you for {damage} damage!")
+        
+        # Update health displays
+        combat.home_tab.health = cs.player.get_health()
+        combat.home_tab.app.query_one("#tab_character").health = cs.player.get_health()
+        
+        if cs.player.get_health() <= 0:
+            end_combat_defeat(combat)
+            return
+    
+    # Back to player turn
+    start_player_turn(combat)
+
+def end_combat_victory(combat):
+    combat.home_tab.terminal_message("You defeated all zombies!")
+    
+    # Add rewards
+    gold = random.randint(5, 20)
+    exp = random.randint(10, 30)
+    
+    cs.player.set_currencypoints(cs.player.get_currencypoints() + cs.Cost.translate_to_currency_points(cs.Cost(gold, "gp")))
+    cs.player.level.add_current_exp(exp)
+    
+    combat.home_tab.terminal_message(f"Found {gold} gold pieces!")
+    combat.home_tab.terminal_message(f"Gained {exp} experience points!")
+
+    # Update displays
+    combat.home_tab.currencypoints = cs.player.get_currencypoints()
+    combat.home_tab.app.query_one("#tab_character").exp = cs.player.level.get_current_exp()
+    combat.home_tab.app.query_one("#tab_character").level = cs.player.level.get_level()
+
+    PlayerTile.travel_message(combat.home_tab.app)
+    
+    combat.home_tab.app.combat_state = None
+
+def end_combat_defeat(combat):
+    combat.home_tab.terminal_message("You have been defeated!")
+    combat.home_tab.terminal_message("You wake up outside the dungeon with half health...")
+
+    PlayerTile.travel_message(combat.home_tab.app)
+    
+    # Penalty for defeat
+    cs.player.set_health(max(1, cs.player.get_max_health() // 2))
+    combat.home_tab.health = cs.player.get_health()
+    combat.home_tab.app.query_one("#tab_character").health = cs.player.get_health()
+    
+    combat.home_tab.app.combat_state = None

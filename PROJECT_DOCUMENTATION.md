@@ -2803,3 +2803,18 @@ Sprint 4 is dedicated towards making the project "finished" and finalising its f
 
 # Sprint 4
 ## Design
+1. **Identify Potential Enhancements** \
+For the last sprint there are a couple more enhancements that the program could see throughout it's development cycle. Firstly would be the final implementation of the last towns and dungeon system. Secondly, the error handling could be fixed to process inputs that are received at incorrect times (Currently if you press a tab switch button while the tabs aren't loaded the program crashes). Third, audio could be added to the system (this is only an idea). Lastly, combat could be implemented and finalized fully.
+2. **Explain the Integration Process** \
+The integration process for these are very simple, the town switching implementation just involved creating a few more functions per town and then integrating it into the terminal command system through if statements. Dungeons and Combat would be added simply using the terminal as a text based handler, and would not have a moveable space unlike towns. Error handling would be implemented by adding in more checks within the keybind functions. Lastly Audio could be added by having a multi-threaded function that could be called from anywhere in the program to play an audio file with a specific name.
+3. **Update Structure Chart / Class Diagram as Required** \
+(Class Diagram doesn't need updating)
+**Structure Chart:**
+![StructureChart](TheoryStorage/DungeonsAndCritters-StructureChart-Updates.png)
+
+## Build and Test
+(Add later due to the immense file size this will cause lol)
+
+## Review
+
+## Launch

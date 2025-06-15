@@ -221,7 +221,6 @@ LocationView {
     height: 90%;
     width: 100%;
     align: center middle;
-    border: round red;
 }
 
 .terminal-container {

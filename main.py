@@ -165,7 +165,7 @@ class HomePage(TabPane): # This page is dedicated to displaying inputs
 
     def __init__(self, name):
         super().__init__(name, id="tab_home")
-        self.scroll = VerticalScroll(Static("Welcome to Dungeons and Crawlers!", classes="home_tab-interactions-console-line"), Static("T -:--", id="home_tab-interactions-console-timer", classes="home_tab-interactions-console-timer"), classes="home_tab-interactions-console")
+        self.scroll = VerticalScroll(Static("Welcome to Dungeons and Crawlers!", classes="home_tab-interactions-console-line"), classes="home_tab-interactions-console")
         self.grid = Grid()
         self.health = self.app.player._health
         self.max_health = self.app.player._max_health
@@ -271,6 +271,10 @@ class HomePage(TabPane): # This page is dedicated to displaying inputs
     def handle_command(self, command) -> None:
         self.terminal_message(f"{cs.player._name} >> {command}")
 
+        if hasattr(self.app, 'combat_state') and self.app.combat_state and self.app.combat_state.active:
+            term.process_combat_command(self.app.combat_state, command)
+            return
+
         command = command.lower()
         player = cs.player
         player_tile = self.app.playertile
@@ -281,6 +285,7 @@ class HomePage(TabPane): # This page is dedicated to displaying inputs
                 player_tile.x = 6
                 player_tile.y = 6
                 self.app.grid_view = term.TownView(player_tile, self.app.map)
+                self.app.town = term.create_shorecliff_tiles(player_tile, self.app.map)
                 self.app.grid_view.can_focus = True
                 self.app.grid_initialised = True
                 self.grid = self.app.grid_view
@@ -289,6 +294,50 @@ class HomePage(TabPane): # This page is dedicated to displaying inputs
                 self.query_one("#minimapcontainer").mount(Static("Minimap", classes="generic_tab-title"))
                 self.query_one("#minimapcontainer").mount(Static(f"Town: {self.app.town.name}", classes="generic_tab-title"))
                 self.query_one("#minimapcontainer").mount(self.grid)
+            elif command.split(" ")[1] == "2":
+                self.app.map = term.LocationMap(term.foothills_tiles())
+                player_tile.x = 6
+                player_tile.y = 6
+                self.app.grid_view = term.TownView(player_tile, self.app.map)
+                self.app.town = term.create_foothills_tiles(player_tile, self.app.map)
+                self.app.grid_view.can_focus = True
+                self.app.grid_initialised = True
+                self.grid = self.app.grid_view
+                self.app.grid_view = self.grid
+                self.query_one("#minimapcontainer").remove_children()
+                self.query_one("#minimapcontainer").mount(Static("Minimap", classes="generic_tab-title"))
+                self.query_one("#minimapcontainer").mount(Static(f"Town: {self.app.town.name}", classes="generic_tab-title"))
+                self.query_one("#minimapcontainer").mount(self.grid)
+            elif command.split(" ")[1] == "3":
+                self.app.map = term.LocationMap(term.highlands_valor_tiles())
+                player_tile.x = 6
+                player_tile.y = 6
+                self.app.grid_view = term.TownView(player_tile, self.app.map)
+                self.app.town = term.create_highlands_valor_tiles(player_tile, self.app.map)
+                self.app.grid_view.can_focus = True
+                self.app.grid_initialised = True
+                self.grid = self.app.grid_view
+                self.app.grid_view = self.grid
+                self.query_one("#minimapcontainer").remove_children()
+                self.query_one("#minimapcontainer").mount(Static("Minimap", classes="generic_tab-title"))
+                self.query_one("#minimapcontainer").mount(Static(f"Town: {self.app.town.name}", classes="generic_tab-title"))
+                self.query_one("#minimapcontainer").mount(self.grid)
+            elif command.split(" ")[1] == "4":
+                self.app.map = term.LocationMap(term.oakenshore())
+                player_tile.x = 6
+                player_tile.y = 6
+                self.app.grid_view = term.TownView(player_tile, self.app.map)
+                self.app.town = term.create_oakenshore(player_tile, self.app.map)
+                self.app.grid_view.can_focus = True
+                self.app.grid_initialised = True
+                self.grid = self.app.grid_view
+                self.app.grid_view = self.grid
+                self.query_one("#minimapcontainer").remove_children()
+                self.query_one("#minimapcontainer").mount(Static("Minimap", classes="generic_tab-title"))
+                self.query_one("#minimapcontainer").mount(Static(f"Town: {self.app.town.name}", classes="generic_tab-title"))
+                self.query_one("#minimapcontainer").mount(self.grid)
+            elif command.split(" ")[1] == "5":
+                term.windwood_dungeon(self.app.player, self)
 
         # Handle building commands
         if player_tile.current_building:
@@ -313,7 +362,7 @@ class HomePage(TabPane): # This page is dedicated to displaying inputs
     def terminal_message(self, message: str):
         # Mounting new messages in the inner container appends them underneath previously added messages
         self.scroll.mount(
-            Static(message, classes="home_tab-interactions-console-line")
+            Static(message, classes="home_tab-interactions-console-line", markup=False)
         )
 
         # Check the command here
@@ -361,9 +410,8 @@ class MapPage(TabPane): # Self explanatory, just text and columns aswell as an a
             asciiartmap.border_title="Elednor Isles"
             yield asciiartmap
             with Vertical(classes = "map_tab-column"):
-                yield Static("Some info over here or smth", classes="map_tab-sub_info")
                 yield Static("* ELednor Isles 15 anno", classes="map_tab-sub_info")
-                yield Static("* Other basic info", classes="map_tab-sub_info")
+                yield Static("* The world is stable, but adventurers are needed", classes="map_tab-sub_info")
 
 class InventoryPage(TabPane): # This just loops through all the items that are in the items list and puts them into a grid for the user, allowing them to be dropped down with the .get_widget from  the Item() class
     def __init__(self, name):
@@ -451,6 +499,7 @@ class CharacterPage(TabPane): # This just displays all the character ifnormation
     def watch_exp(self, old_exp: int, new_exp: int):
         try:
             if new_exp != 0:
+                self.query_one("#level_static").update(f"Level: {cs.player.level.level} ({new_exp}/{cs.player.level.required_exp(cs.player.level.level + 1)})")
                 self.query_one("#exp_progress_bar").advance(new_exp - old_exp)
         except:
             print("")

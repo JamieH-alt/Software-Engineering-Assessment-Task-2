@@ -607,6 +607,9 @@ class Weapon(Item):
         if hasattr(event.collapsible, 'item_ref'):
             item_collapsed_states[event.collapsible.item_ref.index] = event.collapsible
 
+    def is_weapon(self):
+        return True
+
 class ArmourClass():
     def __init__(self, base: int, dex_bonus: bool, max_bonus: int):
         self.base = base
@@ -741,3 +744,16 @@ player = Player(
     [],
     []
 )
+
+# This is just a hodgepodge quick and easy zombie. If I had more time this would be implemented with the Entity system.
+class Zombie():
+    def __init__(self, max_health: int, damage_dice: Dice):
+        self.max_health = max_health
+        self.health = max_health
+        self.damage_dice = damage_dice
+    
+    def attack(self) -> int:
+        total = 0
+        for _ in range(int(self.damage_dice.amount)):
+            total += random.randint(1, self.damage_dice.dice)
+        return total

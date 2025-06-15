@@ -24,14 +24,20 @@
             "dagger",
             "dagger",
             "dagger",
-            "dagger"
+            "dagger",
+            "dagger",
+            "spear",
+            "warhammer"
         ],
         "equipped_inventory": [
-            "shortsword"
+            "shortsword",
+            "greatsword",
+            "dagger",
+            "warhammer"
         ],
         "level": 1,
-        "currentexp": 55,
-        "currencypoints": 365,
+        "currentexp": 74,
+        "currencypoints": 10,
         "spells": [],
         "health": 50,
         "max_health": 50

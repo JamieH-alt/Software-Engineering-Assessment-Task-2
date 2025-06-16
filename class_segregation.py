@@ -461,11 +461,11 @@ class Cost():
         if currency == "cp":
             return amount
         elif currency == "sp":
-            return amount * 10
+            return amount / 10
         elif currency == "ep":
-            return amount * 50
+            return amount / 50
         elif currency == "gp":
-            return amount * 100
+            return amount / 100
 
 class Dice():
     def __init__(self, amount: int, dice: int):

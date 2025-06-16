@@ -616,6 +616,8 @@ def end_combat_victory(combat):
     combat.home_tab.app.query_one("#tab_character").level = cs.player.level.get_level()
 
     PlayerTile.travel_message(combat.home_tab.app)
+
+    combat.home_tab.app.save_game()
     
     combat.home_tab.app.combat_state = None
 
@@ -630,4 +632,6 @@ def end_combat_defeat(combat):
     combat.home_tab.health = cs.player.get_health()
     combat.home_tab.app.query_one("#tab_character").health = cs.player.get_health()
     
+    combat.home_tab.app.save_game()
+
     combat.home_tab.app.combat_state = None

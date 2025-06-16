@@ -752,19 +752,34 @@ class MyApp(App): # This is the main app container that composes everything
 
     # This sets up all of the tabs
     def action_tab_home(self) -> None:
-        self.query_one(TabbedContent).active = "tab_home"
+        try:
+            self.query_one(TabbedContent).active = "tab_home"
+        except:
+            print("") # This doesnt do anything as printing cant work with textual, This just allows us to ignore the exception.
+
     def action_tab_map(self) -> None:
-        self.query_one(TabbedContent).active = "tab_map"
+        try:
+            self.query_one(TabbedContent).active = "tab_map"
+        except:
+            print("")
 
     def action_tab_inventory(self) -> None:
-        self.query_one(TabbedContent).active = "tab_inventory"
+        try:
+            self.query_one(TabbedContent).active = "tab_inventory"
+        except:
+            print("")
 
     def action_tab_character(self) -> None:
-        self.query_one(TabbedContent).active = "tab_character"
+        try:
+            self.query_one(TabbedContent).active = "tab_character"
+        except:
+            print("")
 
     def action_tab_help(self) -> None:
-        self.query_one(TabbedContent).active = "tab_help"
-
+        try:
+            self.query_one(TabbedContent).active = "tab_help"
+        except:
+            print("")
 
 if __name__ == "__main__":
     if not os.path.exists("saves"):

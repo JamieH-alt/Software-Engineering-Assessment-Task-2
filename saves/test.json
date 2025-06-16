@@ -36,10 +36,10 @@
             "warhammer"
         ],
         "level": 1,
-        "currentexp": 74,
-        "currencypoints": 10,
+        "currentexp": 123,
+        "currencypoints": 2980,
         "spells": [],
-        "health": 50,
+        "health": 32,
         "max_health": 50
     }
 }

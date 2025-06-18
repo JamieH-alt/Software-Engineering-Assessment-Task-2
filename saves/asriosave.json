@@ -1,0 +1,30 @@
+{
+    "player": {
+        "name": "Ario",
+        "race_id": 4,
+        "class_id": 6,
+        "stats": {
+            "strength": 15,
+            "dexterity": 15,
+            "constitution": 7,
+            "intelligence": 8,
+            "wisdom": 9,
+            "charisma": 16
+        },
+        "hitpoints": 10,
+        "armorclass": 15,
+        "proficiencybonus": 2,
+        "inventory": [
+            "greatsword"
+        ],
+        "equipped_inventory": [
+            "greatsword"
+        ],
+        "level": 1,
+        "currentexp": 10,
+        "currencypoints": 1545,
+        "spells": [],
+        "health": 5,
+        "max_health": 20
+    }
+}
